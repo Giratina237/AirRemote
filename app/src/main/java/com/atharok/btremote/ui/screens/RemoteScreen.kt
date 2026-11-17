@@ -444,7 +444,7 @@ private fun NavigationLayout(
     setMouseScrollMode: (Boolean) -> Unit,
     sendMouseTilt: (Float, Float) -> Unit,
     sendMouseOrientation: (Float, Float, Long, Float) -> Unit,
-    recenterAirPointer: () -> Unit,
+    recenterAirPointer: (Boolean) -> Unit,
     navigationToggle: NavigationToggle
 ) {
     FadeAnimatedContent(targetState = navigationToggle) {

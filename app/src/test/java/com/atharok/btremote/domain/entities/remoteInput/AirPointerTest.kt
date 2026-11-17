@@ -25,18 +25,48 @@ class AirPointerTest {
 
     private val pointer = AirPointer(now = { clock }, sendRaw = { x, y -> hostMove(x, y) }, sendWheel = { wheel += it })
     private val rad = (Math.PI / 180).toFloat()
+    private val level = AirMouseTuning.neutralPitchDeg
+
+    /** Holds the phone at yaw, and pitch relative to the natural pointing angle. */
 
     /** Holds the phone at (yawDeg, pitchDeg) for [ms] at 200 Hz. */
     private fun hold(yawDeg: Float, pitchDeg: Float, ms: Int) {
         repeat(ms / 5) {
             clock += 5
-            pointer.onOrientation(yawDeg * rad, pitchDeg * rad, clock * 1_000_000L, 1f)
+            pointer.onOrientation(yawDeg * rad, (level + pitchDeg) * rad, clock * 1_000_000L, 1f)
         }
     }
 
     @Test
     fun neutralIsTheCentreWhereverThePointerWas() {
-        hold(30f, 10f, 1500)          // first sample = neutral
+        hold(30f, 0f, 1500)           // first pointing sample = middle column; level = middle row
+        assertEquals(960f, hostX, 3f)
+        assertEquals(540f, hostY, 3f)
+    }
+
+    @Test
+    fun neutralIsSlightlyAboveLevel() {
+        assertTrue(AirMouseTuning.neutralPitchDeg in 5f..20f)
+        repeat(300) { clock += 5; pointer.onOrientation(0f, 0f, clock * 1_000_000L, 1f) }   // held exactly level
+        assertTrue("level points below the middle, got $hostY", hostY > 560f)
+    }
+
+    @Test
+    fun holdingThePhoneUprightIsNotNeutral() {
+        hold(0f, 80f, 1000)           // looking at the phone screen: nothing happens yet
+        assertEquals(700f, hostX, 0.1f)
+        hold(20f, 0f, 1500)           // now pointing level at the TV: that's the centre
+        assertEquals(960f, hostX, 3f)
+        assertEquals(540f, hostY, 3f)
+        hold(20f, 5f, 1500)           // 5 deg up = 240 px up
+        assertEquals(300f, hostY, 25f)
+    }
+
+    @Test
+    fun centerButtonUsesTheCurrentAngle() {
+        hold(0f, 0f, 1500)
+        pointer.recenter(fromButton = true)
+        hold(10f, -12f, 1500)
         assertEquals(960f, hostX, 3f)
         assertEquals(540f, hostY, 3f)
     }

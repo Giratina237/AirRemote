@@ -24,6 +24,7 @@ object AirMouseTuning {
     @Volatile var invertScroll = false
     // absolute pointer
     @Volatile var absolute = true
+    @Volatile var neutralPitchDeg = 12f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
     @Volatile var pointerMinCutoffHz = 1.2f     // smoothing when still (lower = steadier)
     @Volatile var pointerBeta = 0.004f          // how quickly smoothing lets go as it moves (per px/s)
@@ -58,6 +59,7 @@ object AirMouseTuning {
             scrollMaxRate = j.optDouble("scrollMaxRate", scrollMaxRate.toDouble()).toFloat()
             invertScroll = j.optBoolean("invertScroll", invertScroll)
             absolute = j.optBoolean("absolute", absolute)
+            neutralPitchDeg = j.optDouble("neutralPitchDeg", neutralPitchDeg.toDouble()).toFloat()
             degreesPerScreenWidth = j.optDouble("degreesPerScreenWidth", degreesPerScreenWidth.toDouble()).toFloat()
             pointerMinCutoffHz = j.optDouble("pointerMinCutoffHz", pointerMinCutoffHz.toDouble()).toFloat()
             pointerBeta = j.optDouble("pointerBeta", pointerBeta.toDouble()).toFloat()

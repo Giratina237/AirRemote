@@ -31,6 +31,7 @@ class AirPointer(
     private var yaw0 = 0f
     private var pitch0 = 0f
     private var needRecenter = true
+    private var recenterPitchToo = false   // CENTER button: the current direction (both axes) becomes the middle
     private var settleUntilMs = 0L   // after the corner slam, until the host's speed estimate has forgotten it
 
     // smoothed target
@@ -52,7 +53,13 @@ class AirPointer(
     private var scrollPitch0 = Float.NaN
     private var scrollAccumulator = 0f
 
-    fun recenter() { needRecenter = true }
+    /**
+     * Re-sync. [fromButton] (CENTER): wherever the phone points now becomes the middle of the TV.
+     * Otherwise (opening the air mouse): the phone held level (pitch [AirMouseTuning.neutralPitchDeg]) is the
+     * middle row, and the middle column is set the first time the phone is held in a pointing posture, not while
+     * it's held upright to look at the screen.
+     */
+    fun recenter(fromButton: Boolean = false) { needRecenter = true; recenterPitchToo = fromButton }
 
     /** A mouse button went down or up: hold the pointer where it was just before the press jolted the phone. */
     fun onButtonChange() {
@@ -82,8 +89,11 @@ class AirPointer(
         lastSampleNs = timestampNs
 
         if (needRecenter) {
+            val levelPitch = AirMouseTuning.neutralPitchDeg * PI.toFloat() / 180f
+            if (!recenterPitchToo && abs(pitch - levelPitch) > POINTING_POSTURE_RAD) return   // not pointing yet
             needRecenter = false
-            yaw0 = yaw; pitch0 = pitch
+            yaw0 = yaw
+            pitch0 = if (recenterPitchToo) pitch else levelPitch
             // pin the host pointer into the top-left corner, wherever it was
             repeat(24) { sendRaw(-127f, -127f) }
             rawHistory.clear()
@@ -192,5 +202,6 @@ class AirPointer(
         const val SPEED_WINDOW_MS = 80L
         const val MAX_RAW = 120f
         const val EDGE_PUSH = 6f
+        val POINTING_POSTURE_RAD = (35 * PI / 180).toFloat()
     }
 }

@@ -35,7 +35,7 @@ fun MousePadLayout(
     setMouseScrollMode: (Boolean) -> Unit = {},
     sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
     sendMouseOrientation: ((Float, Float, Long, Float) -> Unit)? = null,
-    recenterAirPointer: () -> Unit = {},
+    recenterAirPointer: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -50,12 +50,12 @@ fun MousePadLayout(
             sendMouseMotion = sendMouseMotion,
             sendMouseTilt = sendMouseTilt,
             sendMouseOrientation = sendMouseOrientation,
-            recenter = recenterAirPointer
+            recenter = { recenterAirPointer(false) }
         )
         AirMouseLayout(
             sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },
             setScrollMode = setMouseScrollMode,
-            recenter = recenterAirPointer,
+            recenter = { recenterAirPointer(true) },
             modifier = modifier
         )
         return

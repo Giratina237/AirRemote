@@ -55,7 +55,7 @@ class RemoteViewModel(
         if (AirMouseTuning.absolute) airPointer.setScroll(it) else mouseReportSender.scrollMode = it
     }
     val sendMouseOrientation: (Float, Float, Long, Float) -> Unit = { yaw, pitch, t, speed -> airPointer.onOrientation(yaw, pitch, t, speed) }
-    val recenterAirPointer: () -> Unit = { airPointer.recenter() }
+    val recenterAirPointer: (Boolean) -> Unit = { fromButton -> airPointer.recenter(fromButton) }
     val sendMouseTilt: (Float, Float) -> Unit = { rateY, dt -> mouseReportSender.sendTilt(rateY, dt) }
 
     // Keyboard
