@@ -19,7 +19,9 @@ import kotlin.math.hypot
 class AirPointer(
     private val now: () -> Long = { System.nanoTime() / 1_000_000L },
     private val sendRaw: (Float, Float) -> Unit,
-    private val sendWheel: (Int) -> Unit
+    private val sendWheel: (Int) -> Unit,
+    /** Pen-tablet report: absolute position in screen pixels, tip pressed, in range. Null = relative mouse only. */
+    private val sendPen: ((Float, Float, Boolean, Boolean) -> Unit)? = null
 ) {
     var screenW = 1920f
     var screenH = 1080f
@@ -59,6 +61,32 @@ class AirPointer(
      * middle row, and the middle column is set the first time the phone is held in a pointing posture, not while
      * it's held upright to look at the screen.
      */
+    // pen tablet
+    private var tip = false
+    private var lastSampleMs = Long.MIN_VALUE / 2
+    private var penX = -1f
+    private var penY = -1f
+    private val penMode get() = sendPen != null && AirMouseTuning.pen
+
+    /** The pen is in use (absolute mode, orientation flowing): it takes over the left button. */
+    val penActive get() = penMode && AirMouseTuning.absolute && now() - lastSampleMs < 300
+
+    /** Left button as the pen tip. Returns false when the pen isn't in use (the mouse button should be used). */
+    fun setTip(down: Boolean): Boolean {
+        if (down && !penActive) return false
+        if (!down && !tip) return false
+        tip = down
+        val (x, y) = if (now() < freezeUntilMs) latchX to latchY else fx to fy
+        emitPen(x, y, force = true)
+        return true
+    }
+
+    private fun emitPen(x: Float, y: Float, force: Boolean = false) {
+        if (!force && abs(x - penX) < 0.25f && abs(y - penY) < 0.25f) return
+        penX = x; penY = y
+        sendPen?.invoke(x, y, tip, true)
+    }
+
     fun recenter(fromButton: Boolean = false) { needRecenter = true; recenterPitchToo = fromButton }
 
     /** A mouse button went down or up: hold the pointer where it was just before the press jolted the phone. */
@@ -75,7 +103,7 @@ class AirPointer(
         scrollPitch0 = Float.NaN
         scrollAccumulator = 0f
         freezeUntilMs = now() + AirMouseTuning.clickFreezeMs
-        latchX = modelX; latchY = modelY
+        latchX = if (penMode) fx else modelX; latchY = if (penMode) fy else modelY
     }
 
     /**
@@ -85,6 +113,7 @@ class AirPointer(
      */
     fun onOrientation(yaw: Float, pitch: Float, timestampNs: Long, speed: Float) {
         val t = now()
+        lastSampleMs = t
         val dt = if (lastSampleNs == 0L) 0f else ((timestampNs - lastSampleNs) / 1e9f).coerceIn(0f, 0.05f)
         lastSampleNs = timestampNs
 
@@ -94,14 +123,20 @@ class AirPointer(
             needRecenter = false
             yaw0 = yaw
             pitch0 = if (recenterPitchToo) pitch else levelPitch
-            // pin the host pointer into the top-left corner, wherever it was
-            repeat(24) { sendRaw(-127f, -127f) }
-            rawHistory.clear()
-            modelX = 0f; modelY = 0f
-            fx = 0f; fy = 0f               // glide from the corner to the centre
             targetHistory.clear()
             freezeUntilMs = 0L
-            settleUntilMs = t + 2 * SPEED_WINDOW_MS
+            if (penMode) {
+                // the TV places the cursor itself: nothing to re-sync, just start in the middle
+                fx = screenW / 2f; fy = screenH / 2f
+                settleUntilMs = 0L
+            } else {
+                // pin the host pointer into the top-left corner, wherever it was, then glide to the centre
+                repeat(24) { sendRaw(-127f, -127f) }
+                rawHistory.clear()
+                modelX = 0f; modelY = 0f
+                fx = 0f; fy = 0f
+                settleUntilMs = t + 2 * SPEED_WINDOW_MS
+            }
         }
         if (t < settleUntilMs) return
 
@@ -125,7 +160,7 @@ class AirPointer(
         while (targetHistory.size > 2 && targetHistory.first()[0] < t - 400) targetHistory.removeFirst()
 
         val (gx, gy) = if (t < freezeUntilMs) latchX to latchY else fx to fy
-        moveModelTo(gx, gy, t)
+        if (penMode) emitPen(gx, gy) else moveModelTo(gx, gy, t)
     }
 
     private fun moveModelTo(gx: Float, gy: Float, t: Long) {

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.atharok.btremote.common.utils.KEYBOARD_REPORT_ID
 import com.atharok.btremote.common.utils.MOUSE_REPORT_ID
+import com.atharok.btremote.common.utils.PEN_MAX
+import com.atharok.btremote.common.utils.PEN_REPORT_ID
 import com.atharok.btremote.common.utils.REMOTE_REPORT_ID
 import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
 import com.atharok.btremote.domain.entities.remoteInput.AirPointer
@@ -49,8 +51,19 @@ class RemoteViewModel(
     val setMouseMotionPaused: (Boolean) -> Unit = { mouseReportSender.motionPaused = it }
     private val airPointer = AirPointer(
         sendRaw = { x, y -> mouseReportSender.sendPointerRaw(x, y) },
-        sendWheel = { mouseReportSender.sendWheel(it) }
-    ).also { p -> mouseReportSender.onButtonChange = { p.onButtonChange() } }
+        sendWheel = { mouseReportSender.sendWheel(it) },
+        sendPen = { x, y, tip, inRange -> sendPenReport(x, y, tip, inRange) }
+    ).also { p ->
+        mouseReportSender.onButtonChange = { p.onButtonChange() }
+        mouseReportSender.penTip = { down -> p.setTip(down) }
+    }
+
+    private fun sendPenReport(x: Float, y: Float, tip: Boolean, inRange: Boolean) {
+        val px = (x / (airPointer.screenW - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
+        val py = (y / (airPointer.screenH - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
+        val flags = (if (tip) 1 else 0) or (if (inRange) 2 else 0)
+        sendReport(PEN_REPORT_ID, byteArrayOf(flags.toByte(), px.toByte(), (px shr 8).toByte(), py.toByte(), (py shr 8).toByte()))
+    }
     val setMouseScrollMode: (Boolean) -> Unit = {
         if (AirMouseTuning.absolute) airPointer.setScroll(it) else mouseReportSender.scrollMode = it
     }

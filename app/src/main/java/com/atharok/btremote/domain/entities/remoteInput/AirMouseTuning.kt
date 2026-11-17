@@ -24,6 +24,7 @@ object AirMouseTuning {
     @Volatile var invertScroll = false
     // absolute pointer
     @Volatile var absolute = true
+    @Volatile var pen = true                     // absolute via the pen-tablet device (false: emulate with relative mouse moves)
     @Volatile var neutralPitchDeg = 30f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
     @Volatile var pointerMinCutoffHz = 1.2f     // smoothing when still (lower = steadier)
@@ -59,6 +60,7 @@ object AirMouseTuning {
             scrollMaxRate = j.optDouble("scrollMaxRate", scrollMaxRate.toDouble()).toFloat()
             invertScroll = j.optBoolean("invertScroll", invertScroll)
             absolute = j.optBoolean("absolute", absolute)
+            pen = j.optBoolean("pen", pen)
             neutralPitchDeg = j.optDouble("neutralPitchDeg", neutralPitchDeg.toDouble()).toFloat()
             degreesPerScreenWidth = j.optDouble("degreesPerScreenWidth", degreesPerScreenWidth.toDouble()).toFloat()
             pointerMinCutoffHz = j.optDouble("pointerMinCutoffHz", pointerMinCutoffHz.toDouble()).toFloat()

@@ -125,3 +125,49 @@ class AirPointerTest {
         assertTrue(abs(hostX - x) < 1f)
     }
 }
+
+/** Pen-tablet mode: the TV positions the cursor from absolute coordinates. */
+class AirPointerPenTest {
+    private var clock = 1_000L
+    private val pens = mutableListOf<Triple<Float, Float, Boolean>>()
+    private var relative = 0
+    private val pointer = AirPointer(now = { clock }, sendRaw = { _, _ -> relative++ }, sendWheel = {},
+        sendPen = { x, y, tip, _ -> pens.add(Triple(x, y, tip)) })
+    private val rad = (Math.PI / 180).toFloat()
+    private val level = AirMouseTuning.neutralPitchDeg
+
+    private fun hold(yawDeg: Float, pitchDeg: Float, ms: Int) = repeat(ms / 5) {
+        clock += 5
+        pointer.onOrientation(yawDeg * rad, (level + pitchDeg) * rad, clock * 1_000_000L, 1f)
+    }
+
+    @Test
+    fun absoluteCoordinatesNoRelativeMoves() {
+        hold(0f, 0f, 500)
+        for (i in 0 until 10) { hold(15f, 5f, 100); hold(-15f, -5f, 100) }
+        hold(10f, -5f, 1500)
+        val (x, y, _) = pens.last()
+        assertEquals(1440f, x, 2f)
+        assertEquals(780f, y, 2f)
+        assertEquals(0, relative)
+    }
+
+    @Test
+    fun leftButtonIsThePenTipAtTheSteadySpot() {
+        val sender = MouseReportSender(now = { clock }) { true }
+        sender.penTip = { pointer.setTip(it) }
+        sender.onButtonChange = { pointer.onButtonChange() }
+        hold(0f, 0f, 1500)
+        sender.send(MouseAction.MOUSE_CLICK_LEFT, 0f, 0f, 0f)
+        hold(1.5f, -1f, 100)                       // jolt
+        assertTrue(pens.last().third)
+        assertEquals(960f, pens.last().first, 3f)
+        sender.send(MouseAction.NONE, 0f, 0f, 0f)
+        assertTrue(!pens.last().third)
+    }
+
+    @Test
+    fun penNotInUseLeavesTheMouseButton() {
+        assertTrue(!pointer.setTip(true))          // no orientation yet
+    }
+}

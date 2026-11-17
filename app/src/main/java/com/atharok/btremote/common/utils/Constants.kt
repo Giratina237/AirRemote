@@ -47,6 +47,8 @@ const val USE_MOUSE_NAVIGATION_BY_DEFAULT = false
 const val KEYBOARD_REPORT_ID = 0x01
 const val REMOTE_REPORT_ID = 0x02
 const val MOUSE_REPORT_ID = 0x03
+const val PEN_REPORT_ID = 0x04
+const val PEN_MAX = 32767
 
 val REMOTE_INPUT_NONE = byteArrayOf(0x00, 0x00)
 
@@ -115,6 +117,35 @@ val bluetoothHidDescriptor = byteArrayOf(
     0x75.toByte(), 0x08.toByte(),                    //     Report Size (8)
     0x95.toByte(), 0x03.toByte(),                    //     Report Count (3)
     0x81.toByte(), 0x06.toByte(),                    //     Input (Data,Variable,Relative)
+    0xC0.toByte(),                                   //   End Collection
+    0xC0.toByte(),                                   // End Collection
+
+    // Pen tablet (absolute air pointer): the TV puts its cursor exactly at (X, Y), no acceleration, no drift.
+    // Application usage "Digitizer" makes Linux mark it INPUT_PROP_POINTER, so Android shows a mouse cursor
+    // that the pen positions absolutely (hover = move, tip = press).
+    0x05.toByte(), 0x0D.toByte(),                    // Usage Page (Digitizer)
+    0x09.toByte(), 0x01.toByte(),                    // Usage (Digitizer)
+    0xA1.toByte(), 0x01.toByte(),                    // Collection (Application)
+    0x85.toByte(), PEN_REPORT_ID.toByte(),           //   Report ID (4)
+    0x09.toByte(), 0x20.toByte(),                    //   Usage (Stylus)
+    0xA1.toByte(), 0x00.toByte(),                    //   Collection (Physical)
+    0x09.toByte(), 0x42.toByte(),                    //     Usage (Tip Switch)
+    0x09.toByte(), 0x32.toByte(),                    //     Usage (In Range)
+    0x15.toByte(), 0x00.toByte(),                    //     Logical Minimum (0)
+    0x25.toByte(), 0x01.toByte(),                    //     Logical Maximum (1)
+    0x75.toByte(), 0x01.toByte(),                    //     Report Size (1)
+    0x95.toByte(), 0x02.toByte(),                    //     Report Count (2)
+    0x81.toByte(), 0x02.toByte(),                    //     Input (Data,Variable,Absolute)
+    0x95.toByte(), 0x06.toByte(),                    //     Report Count (6)
+    0x81.toByte(), 0x03.toByte(),                    //     Input (Constant,Variable,Absolute)
+    0x05.toByte(), 0x01.toByte(),                    //     Usage Page (Generic Desktop)
+    0x09.toByte(), 0x30.toByte(),                    //     Usage (X)
+    0x09.toByte(), 0x31.toByte(),                    //     Usage (Y)
+    0x15.toByte(), 0x00.toByte(),                    //     Logical Minimum (0)
+    0x26.toByte(), 0xFF.toByte(), 0x7F.toByte(),     //     Logical Maximum (32767)
+    0x75.toByte(), 0x10.toByte(),                    //     Report Size (16)
+    0x95.toByte(), 0x02.toByte(),                    //     Report Count (2)
+    0x81.toByte(), 0x02.toByte(),                    //     Input (Data,Variable,Absolute)
     0xC0.toByte(),                                   //   End Collection
     0xC0.toByte()                                    // End Collection
 )
