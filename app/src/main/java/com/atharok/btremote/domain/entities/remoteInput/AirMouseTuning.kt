@@ -33,9 +33,9 @@ object AirMouseTuning {
     @Volatile var scrollDpad = false
     @Volatile var dpadDeadZoneRad = 0.07f       // ~4 deg before the first press (same as drag scroll)
     @Volatile var dpadRepeatDelayMs = 450f      // after the first press, like holding a key
-    @Volatile var dpadMinRate = 2f              // presses/s just past the dead zone
-    @Volatile var dpadMaxRate = 8f              // presses/s at dpadFullRad past it
-    @Volatile var dpadFullRad = 0.5f
+    @Volatile var dpadMinRate = 1f              // presses/s just past the dead zone, at first
+    @Volatile var dpadMaxRate = 10f             // presses/s at full speed
+    @Volatile var dpadFullRad = 0.35f           // angle past the dead zone for full speed (speed grows with the square)
     @Volatile var pen = true                     // absolute via the pen-tablet device (false: emulate with relative mouse moves)
     @Volatile var neutralPitchDeg = 30f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV

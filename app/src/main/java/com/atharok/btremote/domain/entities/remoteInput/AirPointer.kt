@@ -205,7 +205,9 @@ class AirPointer(
                     dpadNextMs = t + AirMouseTuning.dpadRepeatDelayMs.toLong()
                     sendDpad(dir)
                 } else if (t >= dpadNextMs) {
-                    val f = (ex / AirMouseTuning.dpadFullRad).coerceIn(0f, 1f)
+                    // speed from the angle alone: slow near the dead zone, climbing steeply further out
+                    val a = (ex / AirMouseTuning.dpadFullRad).coerceIn(0f, 1f)
+                    val f = a * a
                     val rate = AirMouseTuning.dpadMinRate + (AirMouseTuning.dpadMaxRate - AirMouseTuning.dpadMinRate) * f
                     dpadNextMs = t + (1000f / rate).toLong()
                     sendDpad(dir)

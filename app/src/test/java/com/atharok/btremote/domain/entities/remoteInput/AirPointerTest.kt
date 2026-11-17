@@ -257,13 +257,17 @@ class AirPointerDpadTest {
         assertTrue(keys.isEmpty())
         hold(0f, -3f, 1000)                         // small wobble: nothing
         assertTrue(keys.isEmpty())
-        hold(0f, -12f, 1000)                        // tilt down a bit: one press, a pause, then slow repeats
-        val slow = keys.size
-        assertTrue("slow $slow", keys.all { it.second == 1 } && slow in 2..4)
-        assertTrue(keys.size < 2 || keys[1].first - keys[0].first >= 450)
+        hold(0f, -8f, 3000)                         // tilt down a bit: one press, a pause, then slow steady repeats
+        assertTrue(keys.all { it.second == 1 })
+        val gaps = keys.zipWithNext { a, b -> b.first - a.first }
+        assertTrue("pause first $gaps", gaps.first() >= 450)
+        val repeats = gaps.drop(1)
+        assertTrue("slow $repeats", repeats.all { it >= 700 })
+        assertTrue("steady while held $repeats", repeats.max() - repeats.min() <= 10)
         keys.clear()
-        hold(0f, -45f, 1000)                        // much further: faster
-        assertTrue("fast ${keys.size}", keys.all { it.second == 1 } && keys.size >= 6)
+        hold(0f, 0f, 300)
+        hold(0f, -30f, 1500)                        // tilted far: fast soon after the pause
+        assertTrue("fast ${keys.size}", keys.all { it.second == 1 } && keys.size >= 8)
         keys.clear()
         hold(0f, 0f, 300); hold(20f, 8f, 1000)       // back to neutral, then turn right (wrist tilt ignored)
         assertTrue(keys.isNotEmpty() && keys.all { it.second == 3 })
