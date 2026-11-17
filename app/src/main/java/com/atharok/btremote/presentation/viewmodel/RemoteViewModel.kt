@@ -12,6 +12,7 @@ import com.atharok.btremote.domain.entities.remoteInput.AirPointer
 import kotlinx.coroutines.delay
 import com.atharok.btremote.common.utils.REMOTE_INPUT_NONE
 import com.atharok.btremote.domain.entities.remoteInput.PenCursor
+import com.atharok.btremote.domain.entities.remoteInput.RemoteButtonProperties
 import com.atharok.btremote.domain.entities.remoteInput.MouseAction
 import com.atharok.btremote.domain.entities.remoteInput.MouseReportSender
 import com.atharok.btremote.domain.entities.remoteInput.keyboard.virtualKeyboard.VirtualKeyboardLayout
@@ -78,7 +79,17 @@ class RemoteViewModel(
     private val airPointer = AirPointer(
         sendRaw = { x, y -> mouseReportSender.sendPointerRaw(x, y) },
         sendWheel = { mouseReportSender.sendWheel(it) },
-        pen = penCursor
+        pen = penCursor,
+        sendDpad = { dir ->
+            val key = when (dir) {
+                0 -> RemoteButtonProperties.MenuUpButton
+                1 -> RemoteButtonProperties.MenuDownButton
+                2 -> RemoteButtonProperties.MenuLeftButton
+                else -> RemoteButtonProperties.MenuRightButton
+            }
+            sendReport(REMOTE_REPORT_ID, key.input)
+            sendReport(REMOTE_REPORT_ID, REMOTE_INPUT_NONE)
+        }
     ).also { p -> mouseReportSender.onButtonChange = { p.onButtonChange() } }
 
     private fun sendPenReport(x: Float, y: Float, tip: Boolean, inRange: Boolean) {

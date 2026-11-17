@@ -21,7 +21,9 @@ class AirPointer(
     private val sendRaw: (Float, Float) -> Unit,
     private val sendWheel: (Int) -> Unit,
     /** The pen-tablet cursor (absolute). Null = emulate with relative mouse moves. */
-    private val pen: PenCursor? = null
+    private val pen: PenCursor? = null,
+    /** D-pad press for scroll in D-pad mode: 0 up, 1 down, 2 left, 3 right. */
+    private val sendDpad: (Int) -> Unit = {}
 ) {
     var screenW = 1920f
     var screenH = 1080f
@@ -55,6 +57,7 @@ class AirPointer(
     private var scrollPitch0 = Float.NaN
     private var scrollYaw0 = 0f
     private var scrollAxis = 0          // pen scroll locked to: 0 none yet, 1 vertical, 2 horizontal
+    private var dpadPhase = 0f          // D-pad repeat: fires a press at 1
     private var scrollAccumulator = 0f
 
     private val penMode get() = pen != null && AirMouseTuning.pen
@@ -187,7 +190,22 @@ class AirPointer(
             val hEx = (abs(hAngle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
             // one direction at a time: whichever leaves the dead zone first, until back at neutral
             if (vEx == 0f && hEx == 0f) { scrollAxis = 0; return }
-            if (scrollAxis == 0) scrollAxis = if (vEx >= hEx) 1 else 2
+            if (scrollAxis == 0) {
+                scrollAxis = if (vEx >= hEx) 1 else 2
+                dpadPhase = 1f                                  // D-pad: first press right away
+            }
+            if (AirMouseTuning.scrollDpad) {
+                val ex = if (scrollAxis == 1) vEx else hEx
+                if (ex == 0f) return                            // locked axis back in the dead zone: wait
+                val f = (ex / AirMouseTuning.dpadFullRad).coerceIn(0f, 1f)
+                dpadPhase += (AirMouseTuning.dpadMinRate + (AirMouseTuning.dpadMaxRate - AirMouseTuning.dpadMinRate) * f) * dt
+                if (dpadPhase >= 1f) {
+                    dpadPhase -= 1f
+                    dpadPhase = dpadPhase.coerceAtMost(0.99f)
+                    sendDpad(if (scrollAxis == 1) (if (vAngle > 0f) 0 else 1) else (if (hAngle > 0f) 3 else 2))
+                }
+                return
+            }
             // finger-drag: scrolling up / right = dragging down / left
             if (scrollAxis == 1) pen!!.scrollBy(0f, sign(vAngle) * invert * dragSpeed(vEx) * dt)
             else pen!!.scrollBy(-sign(hAngle) * invert * dragSpeed(hEx) * dt, 0f)

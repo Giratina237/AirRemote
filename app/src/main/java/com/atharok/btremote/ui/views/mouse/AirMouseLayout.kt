@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -46,6 +47,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.atharok.btremote.common.utils.REMOTE_INPUT_NONE
+import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
 import com.atharok.btremote.domain.entities.remoteInput.MouseAction
 import com.atharok.btremote.domain.entities.remoteInput.RemoteButtonProperties
 import com.atharok.btremote.ui.components.customButtons.SurfaceButton
@@ -81,6 +83,13 @@ fun AirMouseLayout(
     val shape = RoundedCornerShape(24.dp)
 
     var scrollOn by remember { mutableStateOf(false) }
+    // SCROLL as drag (smooth, moves content) or D-pad (arrow presses, works in any UI); remembered
+    val prefs = LocalContext.current.getSharedPreferences("airmouse", 0)
+    var dpad by remember { mutableStateOf(prefs.getBoolean("scrollDpad", false).also { AirMouseTuning.scrollDpad = it }) }
+    fun setDpad(on: Boolean) {
+        dpad = on; AirMouseTuning.scrollDpad = on
+        prefs.edit().putBoolean("scrollDpad", on).apply()
+    }
     val scrollDownAt = remember { longArrayOf(0L) }
     val ignoreScrollUp = remember { booleanArrayOf(false) }
     fun scroll(on: Boolean) { scrollOn = on; setScrollMode(on) }
@@ -123,7 +132,7 @@ fun AirMouseLayout(
         RadialButton("BACK", null,
             onDown = { tick(); if (scrollOn) scroll(false); sendRemoteKey(RemoteButtonProperties.BackButton.input) },
             onUp = { sendRemoteKey(REMOTE_INPUT_NONE) }),
-        RadialButton("SCROLL", if (scrollOn) "on · tap to stop" else "tap or hold",
+        RadialButton(if (dpad) "D-PAD" else "SCROLL", if (scrollOn) "on · tap to stop" else "tap or hold",
             onDown = {
                 tick()
                 if (scrollOn) { scroll(false); ignoreScrollUp[0] = true }
@@ -154,6 +163,14 @@ fun AirMouseLayout(
         Row(Modifier.fillMaxWidth().weight(0.26f), horizontalArrangement = Arrangement.spacedBy(gap)) {
             Key(RemoteButtonProperties.HomeButton)
             Key(RemoteButtonProperties.MenuButton)
+            AirButton(
+                label = if (dpad) "D-PAD" else "DRAG",
+                hint = "scroll mode",
+                onDown = { tick(); setDpad(!dpad) },
+                onUp = {},
+                shape = shape,
+                modifier = Modifier.weight(1f).fillMaxHeight()
+            )
         }
     }
 }
@@ -280,6 +297,30 @@ private fun RadialPad(buttons: List<RadialButton>, modifier: Modifier = Modifier
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AirButton(
+    label: String,
+    hint: String?,
+    onDown: () -> Unit,
+    onUp: () -> Unit,
+    shape: RoundedCornerShape,
+    modifier: Modifier = Modifier
+) {
+    SurfaceButton(touchDown = onDown, touchUp = onUp, modifier = modifier, shape = shape) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                if (hint != null) Text(
+                    text = hint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

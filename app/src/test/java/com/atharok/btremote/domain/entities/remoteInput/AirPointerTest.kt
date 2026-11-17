@@ -230,3 +230,39 @@ class AirPointerPenTest {
         assertTrue("slow $slow fast $fast", slow > 100f && fast > 3.5f * slow && fast > 1500f)
     }
 }
+
+/** Scroll button in D-pad mode: arrow presses, faster the further it's tilted. */
+class AirPointerDpadTest {
+    private var clock = 1_000L
+    private val keys = mutableListOf<Pair<Long, Int>>()
+    private val cursor = PenCursor(now = { clock }) { _, _, _, _ -> }
+    private val pointer = AirPointer(now = { clock }, sendRaw = { _, _ -> }, sendWheel = {}, pen = cursor,
+        sendDpad = { keys.add(clock to it) })
+    private val rad = (Math.PI / 180).toFloat()
+    private val level = AirMouseTuning.neutralPitchDeg
+
+    private fun hold(yawDeg: Float, pitchDeg: Float, ms: Int) = repeat(ms / 5) {
+        clock += 5
+        pointer.onOrientation(yawDeg * rad, (level + pitchDeg) * rad, clock * 1_000_000L, 1f)
+    }
+
+    @org.junit.After fun reset() { AirMouseTuning.scrollDpad = false }
+
+    @Test
+    fun tiltSendsRepeatingArrowsOneAxis() {
+        AirMouseTuning.scrollDpad = true
+        hold(0f, 0f, 1500)
+        pointer.setScroll(true)
+        hold(0f, 0f, 300)
+        assertTrue(keys.isEmpty())
+        hold(0f, -10f, 1000)                        // tilt down a little: DOWN, slowly
+        val slow = keys.size
+        assertTrue(keys.all { it.second == 1 } && slow in 2..6)
+        keys.clear()
+        hold(0f, -35f, 1000)                        // further: faster
+        assertTrue(keys.all { it.second == 1 } && keys.size >= 9)
+        keys.clear()
+        hold(0f, 0f, 300); hold(20f, 6f, 1000)       // back to neutral, then turn right (wrist tilt ignored)
+        assertTrue(keys.isNotEmpty() && keys.all { it.second == 3 })
+    }
+}

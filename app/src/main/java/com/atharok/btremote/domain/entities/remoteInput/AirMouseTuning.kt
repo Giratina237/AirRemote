@@ -29,6 +29,11 @@ object AirMouseTuning {
     @Volatile var scrollPxPerRad = 1500f
     @Volatile var scrollPxPerRad2 = 8000f
     @Volatile var scrollMaxPxPerSec = 4000f
+    // scroll button as a D-pad: arrow presses repeating faster with the angle (works in any UI)
+    @Volatile var scrollDpad = false
+    @Volatile var dpadMinRate = 3f              // presses/s just past the dead zone
+    @Volatile var dpadMaxRate = 12f             // presses/s at dpadFullRad past it
+    @Volatile var dpadFullRad = 0.35f
     @Volatile var pen = true                     // absolute via the pen-tablet device (false: emulate with relative mouse moves)
     @Volatile var neutralPitchDeg = 30f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
@@ -66,6 +71,10 @@ object AirMouseTuning {
             invertScroll = j.optBoolean("invertScroll", invertScroll)
             absolute = j.optBoolean("absolute", absolute)
             pen = j.optBoolean("pen", pen)
+            if (j.has("scrollDpad")) scrollDpad = j.optBoolean("scrollDpad", scrollDpad)
+            dpadMinRate = j.optDouble("dpadMinRate", dpadMinRate.toDouble()).toFloat()
+            dpadMaxRate = j.optDouble("dpadMaxRate", dpadMaxRate.toDouble()).toFloat()
+            dpadFullRad = j.optDouble("dpadFullRad", dpadFullRad.toDouble()).toFloat()
             scrollPxPerRad = j.optDouble("scrollPxPerRad", scrollPxPerRad.toDouble()).toFloat()
             scrollPxPerRad2 = j.optDouble("scrollPxPerRad2", scrollPxPerRad2.toDouble()).toFloat()
             scrollMaxPxPerSec = j.optDouble("scrollMaxPxPerSec", scrollMaxPxPerSec.toDouble()).toFloat()
