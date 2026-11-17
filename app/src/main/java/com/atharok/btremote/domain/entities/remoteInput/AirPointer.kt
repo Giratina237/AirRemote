@@ -72,8 +72,18 @@ class AirPointer(
     fun recenter(fromButton: Boolean = false) { needRecenter = true; recenterPitchToo = fromButton }
 
     /** A mouse button went down or up: hold the pointer where it was just before the press jolted the phone. */
+    // press-and-hold: the cursor stays where it was pressed until the phone is moved on purpose
+    private var pressStartMs = 0L
+    private var dragging = false
+    private var dragOffX = 0f
+    private var dragOffY = 0f
+    private var refX = 0f               // where the phone pointed once the press settled (thumb tilt included)
+    private var refY = 0f
+    private var rebased = false
+
     fun onButtonChange() {
         val t = now()
+        if (pen?.pressed == false) { pressStartMs = t; dragging = false; rebased = false }
         val past = targetHistory.lastOrNull { it[0] <= t - AirMouseTuning.rewindMs } ?: targetHistory.firstOrNull()
         latchX = past?.get(1) ?: fx
         latchY = past?.get(2) ?: fy
@@ -143,7 +153,32 @@ class AirPointer(
         while (targetHistory.size > 2 && targetHistory.first()[0] < t - 400) targetHistory.removeFirst()
 
         val (gx, gy) = if (t < freezeUntilMs) latchX to latchY else fx to fy
-        if (penMode) pen!!.moveTo(gx, gy) else moveModelTo(gx, gy, t)
+        if (penMode) {
+            val p = pen!!
+            if (p.pressed) {
+                // pressing the screen tilts the phone, and the thumb keeps it tilted while held: ignore that,
+                // start a drag only on a deliberate move, and then continue from the press point (no jump)
+                if (!dragging) {
+                    val early = t - pressStartMs < DRAG_EARLY_MS
+                    if (early) { refX = latchX; refY = latchY }
+                    else if (!rebased) { rebased = true; refX = fx; refY = fy }   // the thumb's tilt is now the rest point
+                    val vx = fx - refX; val vy = fy - refY
+                    val d = hypot(vx, vy)
+                    val threshold = if (early) DRAG_START_EARLY_PX else DRAG_START_PX
+                    if (d > threshold) {
+                        dragging = true
+                        // continue from the press point: drop the rest offset and the threshold, keep a small kick
+                        val back = (threshold - DRAG_KICK_PX) / d
+                        dragOffX = refX - latchX + vx * back
+                        dragOffY = refY - latchY + vy * back
+                    }
+                }
+                if (dragging) p.moveTo(fx - dragOffX, fy - dragOffY) else p.moveTo(latchX, latchY)
+            } else {
+                dragging = false
+                p.moveTo(gx, gy)
+            }
+        } else moveModelTo(gx, gy, t)
     }
 
     private fun moveModelTo(gx: Float, gy: Float, t: Long) {
@@ -273,6 +308,10 @@ class AirPointer(
     companion object {
         const val SPEED_WINDOW_MS = 80L
         const val MAX_RAW = 120f
+        const val DRAG_EARLY_MS = 400L
+        const val DRAG_START_EARLY_PX = 150f
+        const val DRAG_START_PX = 60f
+        const val DRAG_KICK_PX = 24f
         const val DPAD_SWITCH_RATIO = 1.3f
         const val DPAD_SWITCH_MARGIN_RAD = 0.03f
         const val EDGE_PUSH = 6f

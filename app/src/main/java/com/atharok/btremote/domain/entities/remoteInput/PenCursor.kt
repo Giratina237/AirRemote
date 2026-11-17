@@ -42,6 +42,7 @@ class PenCursor(
     private var lastSentTip = false
 
     val scrolling get() = stroke != Stroke.NONE
+    val pressed get() = tip
 
     // auto-hide: hand tremor keeps the pointer "moving", so the TV would never fade it on its own
     private var hidden = false

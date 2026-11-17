@@ -168,6 +168,28 @@ class AirPointerPenTest {
     }
 
     @Test
+    fun longPressWithThumbTiltDoesNotSwipe() {
+        hold(0f, 0f, 1500)
+        pointer.onButtonChange(); cursor.setTip(true)
+        hold(0.5f, -2.5f, 800)                     // thumb pressure tilts the phone ~2.5 deg (120 px) and holds it
+        val pressed = pens.filter { it.third }
+        assertTrue("$pressed", pressed.all { abs(it.first - 960f) < 3f && abs(it.second - 540f) < 3f })
+        pointer.onButtonChange(); cursor.setTip(false)
+    }
+
+    @Test
+    fun deliberateMoveWhileHeldDragsFromThePressPoint() {
+        hold(0f, 0f, 1500)
+        pointer.onButtonChange(); cursor.setTip(true)
+        hold(0f, 0f, 500)
+        for (k in 1..60) hold(5f * k / 60f, 0f, 5)   // sweep right on purpose (240 px over 0.3 s)
+        hold(5f, 0f, 600)
+        val pressed = pens.filter { it.third }
+        assertTrue("${pressed.takeLast(3)} ${pressed.size}", pressed.last().first > 1100f)
+        assertTrue("no jump", pressed.zipWithNext().all { (a, b) -> abs(b.first - a.first) < 40f })
+    }
+
+    @Test
     fun scrollDragsSmoothlyAndLiftsWithoutFling() {
         hold(0f, 0f, 1500)
         pointer.setScroll(true)
