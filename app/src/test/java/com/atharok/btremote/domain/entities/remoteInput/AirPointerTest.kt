@@ -46,7 +46,7 @@ class AirPointerTest {
 
     @Test
     fun neutralIsTheConfiguredAngle() {
-        assertEquals(45f, AirMouseTuning.neutralPitchDeg, 0.01f)
+        assertEquals(30f, AirMouseTuning.neutralPitchDeg, 0.01f)
         val p = (AirMouseTuning.neutralPitchDeg - 10f) * rad      // 10 deg lower than neutral
         repeat(300) { clock += 5; pointer.onOrientation(0f, p, clock * 1_000_000L, 1f) }
         assertEquals(1020f, hostY, 25f)
