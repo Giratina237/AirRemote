@@ -54,6 +54,7 @@ class AirPointer(
     private var scrollMode = false
     private var scrollPitch0 = Float.NaN
     private var scrollYaw0 = 0f
+    private var scrollAxis = 0          // pen scroll locked to: 0 none yet, 1 vertical, 2 horizontal
     private var scrollAccumulator = 0f
 
     private val penMode get() = pen != null && AirMouseTuning.pen
@@ -78,6 +79,7 @@ class AirPointer(
     fun setScroll(on: Boolean) {
         scrollMode = on
         scrollPitch0 = Float.NaN
+        scrollAxis = 0
         scrollAccumulator = 0f
         freezeUntilMs = now() + AirMouseTuning.clickFreezeMs
         latchX = if (penMode) fx else modelX; latchY = if (penMode) fy else modelY
@@ -178,18 +180,30 @@ class AirPointer(
         if (scrollPitch0.isNaN()) { scrollPitch0 = pitch; scrollYaw0 = yaw; return }
         if (dt <= 0f) return
         val invert = if (AirMouseTuning.invertScroll) -1f else 1f
-        val v = rate(pitch - scrollPitch0) * invert             // + = tilted up = scroll up (notches/s)
-        val h = rate(wrap(yaw - scrollYaw0)) * invert           // + = turned right = scroll right
         if (penMode) {
-            val px = AirMouseTuning.scrollPxPerNotch * dt
+            val vAngle = pitch - scrollPitch0                   // + = tilted up = scroll up
+            val hAngle = wrap(yaw - scrollYaw0)                 // + = turned right = scroll right
+            val vEx = (abs(vAngle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
+            val hEx = (abs(hAngle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
+            // one direction at a time: whichever leaves the dead zone first, until back at neutral
+            if (vEx == 0f && hEx == 0f) { scrollAxis = 0; return }
+            if (scrollAxis == 0) scrollAxis = if (vEx >= hEx) 1 else 2
             // finger-drag: scrolling up / right = dragging down / left
-            if (v != 0f || h != 0f) pen!!.scrollBy(-h * px, v * px)
+            if (scrollAxis == 1) pen!!.scrollBy(0f, sign(vAngle) * invert * dragSpeed(vEx) * dt)
+            else pen!!.scrollBy(-sign(hAngle) * invert * dragSpeed(hEx) * dt, 0f)
             return
         }
+        val v = rate(pitch - scrollPitch0) * invert             // + = tilted up = scroll up (notches/s)
         scrollAccumulator += v * dt
         val steps = scrollAccumulator.toInt()
         if (steps != 0) { scrollAccumulator -= steps; sendWheel(steps) }
     }
+
+    private fun dragSpeed(excess: Float) =
+        (AirMouseTuning.scrollPxPerRad * excess + AirMouseTuning.scrollPxPerRad2 * excess * excess)
+            .coerceAtMost(AirMouseTuning.scrollMaxPxPerSec)
+
+    private fun sign(a: Float) = if (a > 0f) 1f else -1f
 
     /** Signed notches/s for an angle from neutral: dead zone, then growing gently, capped. */
     private fun rate(angle: Float): Float {

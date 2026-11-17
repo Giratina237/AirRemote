@@ -25,6 +25,10 @@ object AirMouseTuning {
     // absolute pointer
     @Volatile var absolute = true
     @Volatile var scrollPxPerNotch = 60f        // pen drag-scroll: pixels per second per notch/s
+    // pen drag-scroll speed (px/s) for an angle past the dead zone e (rad): scrollPxPerRad*e + scrollPxPerRad2*e^2
+    @Volatile var scrollPxPerRad = 1500f
+    @Volatile var scrollPxPerRad2 = 8000f
+    @Volatile var scrollMaxPxPerSec = 4000f
     @Volatile var pen = true                     // absolute via the pen-tablet device (false: emulate with relative mouse moves)
     @Volatile var neutralPitchDeg = 30f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
@@ -62,6 +66,9 @@ object AirMouseTuning {
             invertScroll = j.optBoolean("invertScroll", invertScroll)
             absolute = j.optBoolean("absolute", absolute)
             pen = j.optBoolean("pen", pen)
+            scrollPxPerRad = j.optDouble("scrollPxPerRad", scrollPxPerRad.toDouble()).toFloat()
+            scrollPxPerRad2 = j.optDouble("scrollPxPerRad2", scrollPxPerRad2.toDouble()).toFloat()
+            scrollMaxPxPerSec = j.optDouble("scrollMaxPxPerSec", scrollMaxPxPerSec.toDouble()).toFloat()
             scrollPxPerNotch = j.optDouble("scrollPxPerNotch", scrollPxPerNotch.toDouble()).toFloat()
             neutralPitchDeg = j.optDouble("neutralPitchDeg", neutralPitchDeg.toDouble()).toFloat()
             degreesPerScreenWidth = j.optDouble("degreesPerScreenWidth", degreesPerScreenWidth.toDouble()).toFloat()

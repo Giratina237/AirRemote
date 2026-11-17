@@ -137,6 +137,6 @@ class PenCursor(
     companion object {
         const val SPEED_WINDOW_MS = 80L
         const val IDLE_MS = 120L        // no scroll input this long = scrolling stopped
-        const val SETTLE_MS = 80L       // hold still before lifting (the list's fling tracker sees zero speed)
+        const val SETTLE_MS = 60L       // hold still before lifting (the list's fling tracker sees zero speed)
     }
 }

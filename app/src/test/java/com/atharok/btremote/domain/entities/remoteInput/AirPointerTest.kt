@@ -176,7 +176,7 @@ class AirPointerPenTest {
         hold(0f, 15f, 1500)                        // tilt up: drag down (content scrolls up), tip held
         val down = pens.filter { it.third }
         assertTrue(down.size > 50)
-        assertTrue("moves in small steps", down.zipWithNext().all { (a, b) -> abs(b.second - a.second) < 30f })
+        assertTrue("moves in small steps", pens.zipWithNext().filter { (a, b) -> a.third && b.third }.all { (a, b) -> abs(b.second - a.second) < 30f })
         assertTrue(down.last().second > down.first().second)
         hold(0f, 0f, 400)                          // back to neutral: holds still, then lifts
         val lift = pens.indexOfLast { it.third }
@@ -200,5 +200,33 @@ class AirPointerPenTest {
         assertTrue(down.size > 30)
         assertTrue(down.last().first < down.first().first)
         assertEquals(down.first().second, down.last().second, 1f)   // no vertical drift
+    }
+
+    @Test
+    fun sidewaysScrollIgnoresWristTilt() {
+        hold(0f, 0f, 1500)
+        pointer.setScroll(true)
+        hold(0f, 0f, 300)
+        hold(15f, 0f, 200)                         // turn right first...
+        hold(15f, 9f, 1000)                        // ...the wrist tilts too: still only sideways
+        val down = pens.filter { it.third }
+        assertEquals(down.first().second, down.last().second, 0.5f)
+    }
+
+    private fun dragSpeed(tiltDeg: Float): Float {
+        pens.clear(); times.clear()
+        pointer.setScroll(false); hold(0f, 0f, 400)
+        pointer.setScroll(true); hold(0f, 0f, 300)
+        hold(0f, tiltDeg, 120)                      // within one stroke
+        val d = pens.filter { it.third }
+        return (d.last().second - d.first().second) / ((times[pens.lastIndexOf(d.last())] - times[pens.indexOf(d.first())]) / 1000f)
+    }
+
+    @Test
+    fun scrollSpeedGrowsWithTilt() {
+        hold(0f, 0f, 1500)
+        val slow = dragSpeed(10f)
+        val fast = dragSpeed(30f)
+        assertTrue("slow $slow fast $fast", slow > 100f && fast > 3.5f * slow && fast > 1500f)
     }
 }
