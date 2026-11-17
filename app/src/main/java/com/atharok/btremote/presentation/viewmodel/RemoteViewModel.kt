@@ -46,6 +46,7 @@ class RemoteViewModel(
     val sendMouseMotion: (Float, Float) -> Unit = { x, y -> mouseReportSender.sendMotion(x, y) }
     val setMouseMotionPaused: (Boolean) -> Unit = { mouseReportSender.motionPaused = it }
     val setMouseScrollMode: (Boolean) -> Unit = { mouseReportSender.scrollMode = it }
+    val sendMouseTilt: (Float, Float) -> Unit = { rateY, dt -> mouseReportSender.sendTilt(rateY, dt) }
 
     // Keyboard
     val sendKeyboardReport: (ByteArray) -> Unit = { bytes -> sendReport(KEYBOARD_REPORT_ID, bytes) }

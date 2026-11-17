@@ -19,18 +19,25 @@ import org.koin.androidx.compose.koinViewModel
 fun MouseGyroscope(
     mouseSpeed: Float,
     sendMouseMotion: (Float, Float) -> Unit,
+    sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
     gyroscopeSensorViewModel: GyroscopeSensorViewModel = koinViewModel()
 ) {
     val filter = remember { AirMouseFilter() }
     val tuningDir = LocalContext.current.getExternalFilesDir(null)
     val currentSpeed = rememberUpdatedState(mouseSpeed)
     val currentSend = rememberUpdatedState(sendMouseMotion)
+    val currentTilt = rememberUpdatedState(sendMouseTilt)
+    val lastNs = remember { longArrayOf(0L) }
 
     DisposableEffect(Unit) {
         filter.reset()
+        lastNs[0] = 0L
         gyroscopeSensorViewModel.setOnSample { x, y, z, timestampNs ->
             AirMouseTuning.reloadIfChanged(tuningDir, timestampNs / 1_000_000L)
             val (rateX, rateY) = screenRates(x, y, z, gyroscopeSensorViewModel.getDisplayRotation())
+            val dt = if (lastNs[0] == 0L) 0f else ((timestampNs - lastNs[0]) / 1e9f).coerceIn(0f, 0.05f)
+            lastNs[0] = timestampNs
+            currentTilt.value(rateY, dt)
             val (dx, dy) = filter.step(rateX, rateY, timestampNs, currentSpeed.value)
             if (dx != 0f || dy != 0f) currentSend.value(dx, dy)
         }

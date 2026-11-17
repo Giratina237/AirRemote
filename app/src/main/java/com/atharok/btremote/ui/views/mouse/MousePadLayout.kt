@@ -33,6 +33,7 @@ fun MousePadLayout(
     sendMouseMotion: (Float, Float) -> Unit,
     setMouseMotionPaused: (Boolean) -> Unit,
     setMouseScrollMode: (Boolean) -> Unit = {},
+    sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -44,7 +45,8 @@ fun MousePadLayout(
         // Air mouse mode: gyro pointer with big Click / Scroll / Back buttons, no touchpad
         MouseGyroscope(
             mouseSpeed = mouseSpeed,
-            sendMouseMotion = sendMouseMotion
+            sendMouseMotion = sendMouseMotion,
+            sendMouseTilt = sendMouseTilt
         )
         AirMouseLayout(
             sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },

@@ -51,7 +51,7 @@ fun AirMouseLayout(
         Row(modifier = Modifier.fillMaxWidth().weight(0.45f), horizontalArrangement = Arrangement.spacedBy(gap)) {
             AirButton(
                 label = "SCROLL",
-                hint = "hold + tilt",
+                hint = "hold + tilt up/down",
                 onDown = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); setScrollMode(true) },
                 onUp = { setScrollMode(false) },
                 shape = shape,

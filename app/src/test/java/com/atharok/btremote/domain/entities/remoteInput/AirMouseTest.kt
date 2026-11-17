@@ -78,19 +78,28 @@ class AirMouseScrollTest {
     private val reports = mutableListOf<ByteArray>()
     private var clock = 1_000L
     private val sender = MouseReportSender(now = { clock }) { reports.add(it); true }
+    private fun wheel() = reports.sumOf { it[3].toInt() }
 
     @Test
-    fun scrollModeTurnsTiltIntoWheelAndKeepsThePointerStill() {
+    fun heldTiltKeepsScrollingWithoutMovingThePointer() {
         sender.scrollMode = true
         clock += 500
-        repeat(10) { sender.sendMotion(3f, -10f) }      // tilt up
-        assertEquals(0, reports.sumOf { it[1].toInt() })
-        assertEquals(0, reports.sumOf { it[2].toInt() })
-        assertTrue(reports.sumOf { it[3].toInt() } > 0)  // scrolled up
-        sender.scrollMode = false
+        // tilt up 15 deg over 0.25 s, then hold still for 1 s
+        repeat(50) { sender.sendTilt(-1.05f, 0.005f); sender.sendMotion(0f, -5f) }
+        val afterTilt = wheel()
+        repeat(200) { sender.sendTilt(0f, 0.005f) }
+        assertTrue("keeps scrolling up while held: ${wheel()} vs $afterTilt", wheel() > afterTilt + 3)
+        assertEquals(0, reports.sumOf { it[1].toInt() } + reports.sumOf { it[2].toInt() })
+    }
+
+    @Test
+    fun withinTheDeadZoneNothingScrollsAndNeutralIsWhereTheButtonWentDown() {
+        sender.scrollMode = true
         clock += 500
-        reports.clear()
-        sender.sendMotion(5f, 0f)
-        assertEquals(5, reports.sumOf { it[1].toInt() })
+        repeat(200) { sender.sendTilt(0.1f, 0.005f) }   // 0.1 rad/s for 1 s = 5.7 deg, then...
+        repeat(200) { sender.sendTilt(-0.1f, 0.005f) }  // ...back to neutral
+        val w = wheel()
+        repeat(200) { sender.sendTilt(0f, 0.005f) }
+        assertEquals(w, wheel())                          // back at neutral: stops
     }
 }

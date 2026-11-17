@@ -25,14 +25,18 @@ class MouseReportSender(
             recentMotion.clear()
         }
 
-    // Scroll mode (air mouse "Scroll" button held): the pointer stays put and vertical motion scrolls.
+    // Scroll mode (air mouse "Scroll" button held): the pointer stays put and the phone works like a joystick:
+    // the angle when the button went down is neutral, and the further it's tilted up / down from there, the
+    // faster it keeps scrolling (so the wrist can stay still).
     private var scrollAccumulator = 0f
+    private var scrollTilt = 0f        // radians from neutral, + = tilted down
     var scrollMode: Boolean = false
         set(value) {
             if (value != field) {
                 lastButtonChangeMs = now()     // ignore the jolt of pressing / releasing the button
                 recentMotion.clear()
                 scrollAccumulator = 0f
+                scrollTilt = 0f
             }
             field = value
         }
@@ -54,19 +58,30 @@ class MouseReportSender(
         if (motionPaused) return
         val t = now()
         if (t - lastButtonChangeMs < AirMouseTuning.clickFreezeMs) return
-        if (scrollMode) {
-            // tilt up (pointer would go up, y < 0) = scroll up (wheel > 0)
-            scrollAccumulator += -y * AirMouseTuning.scrollPerPixel * (if (AirMouseTuning.invertScroll) -1f else 1f)
-            val steps = scrollAccumulator.toInt()
-            if (steps != 0) {
-                scrollAccumulator -= steps
-                sendRaw(buttons, 0f, 0f, steps.toFloat())
-            }
-            return
-        }
+        if (scrollMode) return
         recentMotion.addLast(Motion(t, x, y))
         while (recentMotion.isNotEmpty() && recentMotion.first().timeMs < t - AirMouseTuning.rewindMs) recentMotion.removeFirst()
         sendRaw(buttons, x, y, 0f)
+    }
+
+    /** Every gyroscope sample: vertical angular rate (rad/s, + = tilting down) and the sample interval. */
+    fun sendTilt(rateY: Float, dtSec: Float) {
+        if (!scrollMode || dtSec <= 0f) return
+        if (now() - lastButtonChangeMs < AirMouseTuning.clickFreezeMs) return   // pressing the button jolts the phone
+        scrollTilt += rateY * dtSec
+        val dead = AirMouseTuning.scrollDeadZoneRad
+        val excess = (kotlin.math.abs(scrollTilt) - dead).coerceAtLeast(0f)
+        if (excess == 0f) return
+        // notches per second grows with the tilt (gently at first, faster further out), capped
+        val rate = (AirMouseTuning.scrollRate * excess * (1f + AirMouseTuning.scrollCurve * excess))
+            .coerceAtMost(AirMouseTuning.scrollMaxRate)
+        val direction = (if (scrollTilt > 0f) -1f else 1f) * (if (AirMouseTuning.invertScroll) -1f else 1f)  // up = wheel +
+        scrollAccumulator += direction * rate * dtSec
+        val steps = scrollAccumulator.toInt()
+        if (steps != 0) {
+            scrollAccumulator -= steps
+            sendRaw(buttons, 0f, 0f, steps.toFloat())
+        }
     }
 
     private fun rewindRecentMotion(t: Long) {
