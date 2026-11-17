@@ -6,7 +6,8 @@ import java.io.File
 /**
  * Live-tunable air mouse parameters. Read from <external files dir>/airmouse.json, re-checked about once a
  * second while the air mouse runs, so values can be changed with `adb push` without reinstalling.
- * Keys (all optional): pixelsPerRadian, acceleration, deadZone, minCutoffHz, beta, clickFreezeMs, rewindMs.
+ * Keys (all optional): pixelsPerRadian, acceleration, deadZone, minCutoffHz, beta, clickFreezeMs, rewindMs,
+ * scrollPerPixel, invertScroll.
  */
 object AirMouseTuning {
     @Volatile var pixelsPerRadian = 1200f
@@ -16,6 +17,8 @@ object AirMouseTuning {
     @Volatile var beta = AirMouseFilter.BETA
     @Volatile var clickFreezeMs = MouseReportSender.CLICK_FREEZE_MS
     @Volatile var rewindMs = MouseReportSender.REWIND_MS
+    @Volatile var scrollPerPixel = 0.035f     // wheel notches per pixel of pointer motion in scroll mode
+    @Volatile var invertScroll = false
 
     private var lastModified = -1L
     private var lastCheckMs = 0L
@@ -37,6 +40,8 @@ object AirMouseTuning {
             beta = j.optDouble("beta", beta.toDouble()).toFloat()
             clickFreezeMs = j.optLong("clickFreezeMs", clickFreezeMs)
             rewindMs = j.optLong("rewindMs", rewindMs)
+            scrollPerPixel = j.optDouble("scrollPerPixel", scrollPerPixel.toDouble()).toFloat()
+            invertScroll = j.optBoolean("invertScroll", invertScroll)
             android.util.Log.i("AirMouse", "tuning: ppr=$pixelsPerRadian accel=$acceleration dead=$deadZone cutoff=$minCutoffHz beta=$beta freeze=$clickFreezeMs rewind=$rewindMs")
         } catch (e: Exception) {
             android.util.Log.w("AirMouse", "airmouse.json: $e")

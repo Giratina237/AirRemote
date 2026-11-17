@@ -25,6 +25,18 @@ class MouseReportSender(
             recentMotion.clear()
         }
 
+    // Scroll mode (air mouse "Scroll" button held): the pointer stays put and vertical motion scrolls.
+    private var scrollAccumulator = 0f
+    var scrollMode: Boolean = false
+        set(value) {
+            if (value != field) {
+                lastButtonChangeMs = now()     // ignore the jolt of pressing / releasing the button
+                recentMotion.clear()
+                scrollAccumulator = 0f
+            }
+            field = value
+        }
+
     private class Motion(val timeMs: Long, val x: Float, val y: Float)
 
     fun send(action: MouseAction, x: Float, y: Float, wheel: Float) {
@@ -42,6 +54,16 @@ class MouseReportSender(
         if (motionPaused) return
         val t = now()
         if (t - lastButtonChangeMs < AirMouseTuning.clickFreezeMs) return
+        if (scrollMode) {
+            // tilt up (pointer would go up, y < 0) = scroll up (wheel > 0)
+            scrollAccumulator += -y * AirMouseTuning.scrollPerPixel * (if (AirMouseTuning.invertScroll) -1f else 1f)
+            val steps = scrollAccumulator.toInt()
+            if (steps != 0) {
+                scrollAccumulator -= steps
+                sendRaw(buttons, 0f, 0f, steps.toFloat())
+            }
+            return
+        }
         recentMotion.addLast(Motion(t, x, y))
         while (recentMotion.isNotEmpty() && recentMotion.first().timeMs < t - AirMouseTuning.rewindMs) recentMotion.removeFirst()
         sendRaw(buttons, x, y, 0f)

@@ -73,3 +73,24 @@ class AirMouseTest {
         assertTrue("moved $moved", moved in 300f..900f)
     }
 }
+
+class AirMouseScrollTest {
+    private val reports = mutableListOf<ByteArray>()
+    private var clock = 1_000L
+    private val sender = MouseReportSender(now = { clock }) { reports.add(it); true }
+
+    @Test
+    fun scrollModeTurnsTiltIntoWheelAndKeepsThePointerStill() {
+        sender.scrollMode = true
+        clock += 500
+        repeat(10) { sender.sendMotion(3f, -10f) }      // tilt up
+        assertEquals(0, reports.sumOf { it[1].toInt() })
+        assertEquals(0, reports.sumOf { it[2].toInt() })
+        assertTrue(reports.sumOf { it[3].toInt() } > 0)  // scrolled up
+        sender.scrollMode = false
+        clock += 500
+        reports.clear()
+        sender.sendMotion(5f, 0f)
+        assertEquals(5, reports.sumOf { it[1].toInt() })
+    }
+}

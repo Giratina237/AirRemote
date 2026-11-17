@@ -32,6 +32,7 @@ fun MousePadLayout(
     sendMouseInput: (MouseAction, Float, Float, Float) -> Unit,
     sendMouseMotion: (Float, Float) -> Unit,
     setMouseMotionPaused: (Boolean) -> Unit,
+    setMouseScrollMode: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -40,10 +41,17 @@ fun MousePadLayout(
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { setMouseMotionPaused(false) } }
 
     if(useGyroscope) {
+        // Air mouse mode: gyro pointer with big Click / Scroll / Back buttons, no touchpad
         MouseGyroscope(
             mouseSpeed = mouseSpeed,
             sendMouseMotion = sendMouseMotion
         )
+        AirMouseLayout(
+            sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },
+            setScrollMode = setMouseScrollMode,
+            modifier = modifier
+        )
+        return
     }
 
     Column(modifier) {
