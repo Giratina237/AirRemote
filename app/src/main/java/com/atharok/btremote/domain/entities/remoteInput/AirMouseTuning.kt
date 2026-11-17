@@ -31,7 +31,7 @@ object AirMouseTuning {
     @Volatile var scrollMaxPxPerSec = 4000f
     // scroll button as a D-pad: arrow presses repeating faster with the angle (works in any UI)
     @Volatile var scrollDpad = false
-    @Volatile var dpadDeadZoneRad = 0.15f       // ~9 deg before the first press
+    @Volatile var dpadDeadZoneRad = 0.07f       // ~4 deg before the first press (same as drag scroll)
     @Volatile var dpadRepeatDelayMs = 450f      // after the first press, like holding a key
     @Volatile var dpadMinRate = 2f              // presses/s just past the dead zone
     @Volatile var dpadMaxRate = 8f              // presses/s at dpadFullRad past it
