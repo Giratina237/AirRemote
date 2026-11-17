@@ -45,10 +45,11 @@ class AirPointerTest {
     }
 
     @Test
-    fun neutralIsSlightlyAboveLevel() {
-        assertTrue(AirMouseTuning.neutralPitchDeg in 5f..20f)
-        repeat(300) { clock += 5; pointer.onOrientation(0f, 0f, clock * 1_000_000L, 1f) }   // held exactly level
-        assertTrue("level points below the middle, got $hostY", hostY > 560f)
+    fun neutralIsTheConfiguredAngle() {
+        assertEquals(45f, AirMouseTuning.neutralPitchDeg, 0.01f)
+        val p = (AirMouseTuning.neutralPitchDeg - 10f) * rad      // 10 deg lower than neutral
+        repeat(300) { clock += 5; pointer.onOrientation(0f, p, clock * 1_000_000L, 1f) }
+        assertEquals(1020f, hostY, 25f)
     }
 
     @Test

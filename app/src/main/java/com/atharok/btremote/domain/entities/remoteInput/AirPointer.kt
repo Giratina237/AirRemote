@@ -202,6 +202,6 @@ class AirPointer(
         const val SPEED_WINDOW_MS = 80L
         const val MAX_RAW = 120f
         const val EDGE_PUSH = 6f
-        val POINTING_POSTURE_RAD = (35 * PI / 180).toFloat()
+        val POINTING_POSTURE_RAD = (30 * PI / 180).toFloat()
     }
 }
