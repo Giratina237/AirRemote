@@ -3,6 +3,7 @@ package com.atharok.btremote.data.bluetooth
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHidDevice
+import android.bluetooth.BluetoothHidDeviceAppQosSettings
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.ServiceListener
@@ -64,7 +65,19 @@ class BluetoothHidCore(
                 bluetoothHidDevice = bluetoothProfile as? BluetoothHidDevice?
                 bluetoothHidDevice?.let { hidDevice ->
                     if (checkBluetoothConnectPermission(context)) {
-                        _isBluetoothHidProfileRegistered.value = hidDevice.registerApp(hidSettings, null, null, Runnable::run, callback)
+                        // Request a 10 ms latency for outgoing input reports. Leaving this
+                        // unspecified lets the host use its default interrupt-channel QoS.
+                        val outQos = BluetoothHidDeviceAppQosSettings(
+                            BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
+                            800, // Bytes per second; enough for 100 small HID reports/s.
+                            9,   // Small burst allowance including HID framing.
+                            0,   // No peak-bandwidth requirement.
+                            10_000, // Microseconds, not milliseconds.
+                            BluetoothHidDeviceAppQosSettings.MAX
+                        )
+                        _isBluetoothHidProfileRegistered.value = hidDevice.registerApp(
+                            hidSettings, null, outQos, Runnable::run, callback
+                        )
                     }
                 }
             }
