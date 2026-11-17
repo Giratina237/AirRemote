@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shape
@@ -33,6 +34,9 @@ fun MousePad(
     val tapFingerCount = remember { Ref(0) }
     val tapAccumulatedDrift = remember { Ref(0f) }
     val scrollAccumulator = remember { Ref(0f) }
+    val currentSendMouseAction = rememberUpdatedState(sendMouseAction)
+    val currentSendMousePosition = rememberUpdatedState(sendMousePosition)
+    val currentSendMouseScroll = rememberUpdatedState(sendMouseScroll)
 
     DefaultElevatedCard(
         modifier = modifier,
@@ -41,9 +45,13 @@ fun MousePad(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
+                .pointerInput(mouseSpeed, scrollSpeed) {
                     awaitEachGesture {
-                        awaitFirstDown()
+                        val down = awaitFirstDown()
+                        tapStartTimestamp.value = down.uptimeMillis
+                        tapFingerCount.value = 1
+                        tapAccumulatedDrift.value = 0f
+                        scrollAccumulator.value = 0f
                         while (true) {
                             val event = awaitPointerEvent()
                             val inputChanges = event.changes
@@ -51,7 +59,7 @@ fun MousePad(
                             doMove(
                                 mouseSpeed = mouseSpeed,
                                 inputChanges = inputChanges,
-                                sendMousePosition = sendMousePosition
+                                sendMousePosition = currentSendMousePosition.value
                             )
 
                             doTap(
@@ -62,18 +70,18 @@ fun MousePad(
                                 onTapFingerCountChange = { tapFingerCount.value = it },
                                 tapAccumulatedDrift = tapAccumulatedDrift.value,
                                 onTapAccumulatedDriftChange = { tapAccumulatedDrift.value = it },
-                                sendMouseAction = sendMouseAction
+                                sendMouseAction = currentSendMouseAction.value
                             )
 
                             doWheel(
                                 inputChanges = inputChanges,
                                 scrollSpeed = scrollSpeed,
                                 scrollAccumulator = scrollAccumulator,
-                                sendMouseScroll = sendMouseScroll
+                                sendMouseScroll = currentSendMouseScroll.value
                             )
 
                             inputChanges.forEach { it.consume() }
-
+                            if (inputChanges.none { it.pressed }) break
                         }
                     }
                 }
@@ -112,7 +120,7 @@ private fun doTap(
     // If a first finger touches the pad, store the timestamp of the initial contact.
     val isFingerDown = inputChanges.any { it.changedToDown() }
     if (isFingerDown && tapStartTimestamp == 0L) {
-        onTapStartTimestampChange(System.currentTimeMillis())
+        onTapStartTimestampChange(inputChanges.maxOf { it.uptimeMillis })
         return
     }
 
@@ -125,7 +133,7 @@ private fun doTap(
     // If all fingers are lifted, check if the gesture qualifies as a tap
     val isAllFingersUp = inputChanges.none { it.pressed }
     if (isAllFingersUp) {
-        val tapDuration = System.currentTimeMillis() - tapStartTimestamp
+        val tapDuration = inputChanges.maxOf { it.uptimeMillis } - tapStartTimestamp
 
         if (tapDuration < TAP_DURATION_MAX && tapAccumulatedDrift < TAP_DRIFT_MAX_PX) {
             when (tapFingerCount) {
