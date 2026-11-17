@@ -3,50 +3,46 @@ package com.atharok.btremote.ui.views.mouse
 import android.view.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import com.atharok.btremote.domain.entities.remoteInput.AirMouseFilter
 import com.atharok.btremote.presentation.viewmodel.GyroscopeSensorViewModel
 import org.koin.androidx.compose.koinViewModel
 
-private const val OFFSET = 10
-
+/**
+ * Air mouse: every gyroscope sample goes through [AirMouseFilter] (smoothing, dead zone, acceleration)
+ * and straight to the HID sender, without going through recomposition.
+ */
 @Composable
 fun MouseGyroscope(
     mouseSpeed: Float,
-    onMousePositionChange: (Float, Float) -> Unit,
+    sendMouseMotion: (Float, Float) -> Unit,
     gyroscopeSensorViewModel: GyroscopeSensorViewModel = koinViewModel()
 ) {
+    val filter = remember { AirMouseFilter() }
+    val currentSpeed = rememberUpdatedState(mouseSpeed)
+    val currentSend = rememberUpdatedState(sendMouseMotion)
+
     DisposableEffect(Unit) {
+        filter.reset()
+        gyroscopeSensorViewModel.setOnSample { x, y, z, timestampNs ->
+            val (rateX, rateY) = screenRates(x, y, z, gyroscopeSensorViewModel.getDisplayRotation())
+            val (dx, dy) = filter.step(rateX, rateY, timestampNs, currentSpeed.value)
+            if (dx != 0f || dy != 0f) currentSend.value(dx, dy)
+        }
         gyroscopeSensorViewModel.startListening()
         onDispose {
             gyroscopeSensorViewModel.stopListening()
+            gyroscopeSensorViewModel.setOnSample(null)
         }
-    }
-
-    val positions: Triple<Float, Float, Float> = gyroscopeSensorViewModel.positions.collectAsStateWithLifecycle().value
-
-    LaunchedEffect(positions) {
-        val (x, y, z) = positions
-        val (dx, dy) = calculateMouseDirection(
-            x, y, z,
-            gyroscopeSensorViewModel.getDisplayRotation(),
-            mouseSpeed
-        )
-        onMousePositionChange(dx, dy)
     }
 }
 
-private fun calculateMouseDirection(
-    x: Float, y: Float, z: Float,
-    rotation: Int,
-    speed: Float
-): Pair<Float, Float> {
-    val factor: Float = OFFSET * speed * -1
-    return when (rotation) {
-        Surface.ROTATION_0 -> z * factor to x * factor
-        Surface.ROTATION_180 -> z * factor to x * factor * -1
-        Surface.ROTATION_270 -> z * factor to y * factor
-        Surface.ROTATION_90 -> z * factor to y * factor * -1
-        else -> 0f to 0f
-    }
+/** Device gyro axes -> (horizontal, vertical) pointer rates for the current screen rotation. */
+private fun screenRates(x: Float, y: Float, z: Float, rotation: Int): Pair<Float, Float> = when (rotation) {
+    Surface.ROTATION_0 -> -z to -x
+    Surface.ROTATION_180 -> -z to x
+    Surface.ROTATION_270 -> -z to -y
+    Surface.ROTATION_90 -> -z to y
+    else -> 0f to 0f
 }

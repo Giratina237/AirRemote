@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">بلوتوثی ریموت</string>
+    <string name="app_name">AirRemote</string>
     <string name="open">بازکردن</string>
     <string name="close">بستن</string>
     <string name="error">خطا</string>

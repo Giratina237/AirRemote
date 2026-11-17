@@ -83,7 +83,7 @@
     <string name="disabled_automatic_connection_message">Voleu desactivar la connexió automàtica?</string>
     <string name="bluetooth_device_disconnecting_message">S’està desconnectant «%1$s»…</string>
     <string name="keyboard">Teclat</string>
-    <string name="app_name">Telecomanda BT</string>
+    <string name="app_name">AirRemote</string>
     <string name="automatic_connect">Connexió automàtica</string>
     <string name="bluetooth_failed_try_again">Torneu-ho a intentar.</string>
     <string name="enter_bluetooth_address_manually">Introduïu l’adreça Bluetooth manualment</string>

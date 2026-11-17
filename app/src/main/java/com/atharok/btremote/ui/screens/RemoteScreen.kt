@@ -1,5 +1,7 @@
 package com.atharok.btremote.ui.screens
 
+import com.atharok.btremote.common.utils.MOUSE_REPORT_ID
+
 import android.bluetooth.BluetoothHidDevice
 import android.content.Context
 import android.content.res.Configuration
@@ -151,6 +153,8 @@ fun RemoteScreen(
                 sendRemoteKeyReport = remoteViewModel.sendRemoteReport,
                 sendKeyboardKeyReport = remoteViewModel.sendKeyboardReport,
                 sendMouseKeyReport = remoteViewModel.sendMouseReport,
+                sendMouseMotion = remoteViewModel.sendMouseMotion,
+                setMouseMotionPaused = remoteViewModel.setMouseMotionPaused,
                 navigationToggle = navigationToggle,
             )
         },
@@ -209,7 +213,14 @@ fun RemoteScreen(
                     volumePhysicalButtonActionUp = remoteSettings.volumePhysicalButtonActionUp,
                     volumePhysicalButtonActionDown = remoteSettings.volumePhysicalButtonActionDown,
                     sendHidReport = { id: Int, bytes: ByteArray ->
-                        remoteViewModel.sendReport(id, bytes)
+                        if (id == MOUSE_REPORT_ID) {
+                            // Volume key mapped to a mouse button: send it through the mouse sender, so the
+                            // air mouse keeps the button held (drag) and the click is stabilised.
+                            val action = MouseAction.entries.firstOrNull { it.byte == bytes.first() } ?: MouseAction.NONE
+                            remoteViewModel.sendMouseReport(action, 0f, 0f, 0f)
+                        } else {
+                            remoteViewModel.sendReport(id, bytes)
+                        }
                     }
                 )
 
@@ -424,6 +435,8 @@ private fun NavigationLayout(
     sendRemoteKeyReport: (ByteArray) -> Unit,
     sendKeyboardKeyReport: (ByteArray) -> Unit,
     sendMouseKeyReport: (input: MouseAction, x: Float, y: Float, wheel: Float) -> Unit,
+    sendMouseMotion: (Float, Float) -> Unit,
+    setMouseMotionPaused: (Boolean) -> Unit,
     navigationToggle: NavigationToggle
 ) {
     FadeAnimatedContent(targetState = navigationToggle) {
@@ -444,6 +457,8 @@ private fun NavigationLayout(
                     shouldInvertMouseScrollingDirection = remoteSettings.shouldInvertMouseScrollingDirection,
                     useGyroscope = remoteSettings.useGyroscope,
                     sendMouseInput = sendMouseKeyReport,
+                    sendMouseMotion = sendMouseMotion,
+                    setMouseMotionPaused = setMouseMotionPaused,
                     modifier = Modifier
                 )
             }

@@ -25,6 +25,7 @@ fun MousePad(
     mouseSpeed: Float,
     scrollSpeed: Float,
     sendMouseAction: (input: MouseAction) -> Unit,
+    onTouchChange: (Boolean) -> Unit = {},
     sendMousePosition: (Float, Float) -> Unit,
     sendMouseScroll: (Float) -> Unit,
     shape: Shape,
@@ -37,6 +38,7 @@ fun MousePad(
     val currentSendMouseAction = rememberUpdatedState(sendMouseAction)
     val currentSendMousePosition = rememberUpdatedState(sendMousePosition)
     val currentSendMouseScroll = rememberUpdatedState(sendMouseScroll)
+    val currentOnTouchChange = rememberUpdatedState(onTouchChange)
 
     DefaultElevatedCard(
         modifier = modifier,
@@ -48,6 +50,7 @@ fun MousePad(
                 .pointerInput(mouseSpeed, scrollSpeed) {
                     awaitEachGesture {
                         val down = awaitFirstDown()
+                        currentOnTouchChange.value(true)   // a finger on the pad pauses the air mouse
                         tapStartTimestamp.value = down.uptimeMillis
                         tapFingerCount.value = 1
                         tapAccumulatedDrift.value = 0f
@@ -81,7 +84,10 @@ fun MousePad(
                             )
 
                             inputChanges.forEach { it.consume() }
-                            if (inputChanges.none { it.pressed }) break
+                            if (inputChanges.none { it.pressed }) {
+                                currentOnTouchChange.value(false)
+                                break
+                            }
                         }
                     }
                 }

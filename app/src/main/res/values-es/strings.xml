@@ -65,7 +65,7 @@
     <string name="keyboard_language_info">Asegúrate de que el idioma del teclado seleccionado coincida con el idioma configurado en el dispositivo remoto.</string>
     <string name="bluetooth_disabled_message">El Bluetooth de tu dispositivo debe estar activado para conectar con el dispositivo remoto.</string>
     <string name="bluetooth_pairing_device_not_found">No se ha detectado ningún dispositivo.</string>
-    <string name="app_name">BT Remoto</string>
+    <string name="app_name">AirRemote</string>
     <string name="theme_black">El tema oscuro usa negro puro</string>
     <string name="mute">Silenciar</string>
     <string name="home">Inicio</string>

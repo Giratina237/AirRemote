@@ -2,7 +2,7 @@
 <resources>
     <string name="help_pairing_missing_device_message_1">Se o dispositivo que você deseja emparelhar não aparece, siga as instruções abaixo:</string>
     <string name="help_pairing_missing_device_check_2">• Certifique-se que a visibilidade Bluetooth está ativada no dispositivo remoto.</string>
-    <string name="app_name">Controle BT</string>
+    <string name="app_name">AirRemote</string>
     <string name="help_device_failed_connection_check_2">• Certifique-se que o Bluetooth está ativado no dispositivo remoto.</string>
     <string name="help_device_failed_connection_check_3">• Certifique-se que ambos dispositivos estão suficientemente perto um do outro.</string>
     <string name="help_pairing_missing_device_check_location_for_android_11_or_less">• Certifique-se que os serviços de localização estão ativados no seu dispositivo.</string>

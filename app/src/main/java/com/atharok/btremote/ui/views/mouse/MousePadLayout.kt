@@ -30,6 +30,8 @@ fun MousePadLayout(
     shouldInvertMouseScrollingDirection: Boolean,
     useGyroscope: Boolean,
     sendMouseInput: (MouseAction, Float, Float, Float) -> Unit,
+    sendMouseMotion: (Float, Float) -> Unit,
+    setMouseMotionPaused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -37,9 +39,7 @@ fun MousePadLayout(
     if(useGyroscope) {
         MouseGyroscope(
             mouseSpeed = mouseSpeed,
-            onMousePositionChange = { x: Float, y: Float ->
-                sendMouseInput(mouseAction.value, x, y, 0f)
-            }
+            sendMouseMotion = sendMouseMotion
         )
     }
 
@@ -56,6 +56,7 @@ fun MousePadLayout(
                     mouseAction.value = it
                     sendMouseInput(mouseAction.value, 0f, 0f, 0f)
                 },
+                onTouchChange = setMouseMotionPaused,
                 sendMousePosition = { x: Float, y: Float ->
                     sendMouseInput(mouseAction.value, x, y, 0f)
                 },

@@ -171,7 +171,7 @@
     <string name="help_device_failed_connection_check_4">• Пробуйте під\'єднатися кілька разів.</string>
     <string name="help_pairing_missing_device_check_location_for_android_11_or_less">• Переконайтеся, що на вашому пристрої увімкнено служби місцезнаходження.</string>
     <string name="help_pairing_device_failed_connection_message_1">Якщо успішно спарили обидва пристрої, але не можете під\'єднатися до віддаленого пристрою, будь ласка, дотримуйтесь наведених нижче інструкцій:</string>
-    <string name="app_name">Пульт BT</string>
+    <string name="app_name">AirRemote</string>
     <string name="pairing_from_a_remote_device_step_3_content_1">Якщо створення пари пройшло успішно, пристрій Android повинен автоматично під\'єднатися до пристрою пульта. Однак це з\'єднання не використовує протокол HID (Human Interface Device), що перешкоджає роботі пульта керування. Для вирішення цієї проблеми:</string>
     <string name="help_device_failed_connection_check_1">• Переконайтеся, що віддалений пристрій працює на Android або Android TV.</string>
     <string name="help_device_failed_connection_message_3">Якщо проблема не зникає, переконайтеся, що датчик Bluetooth ваших пристроїв не пошкоджений.</string>

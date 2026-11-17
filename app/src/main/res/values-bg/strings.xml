@@ -118,7 +118,7 @@
     <string name="help_remote_control_buttons_are_not_working_title">Бутони за дистанционно управление</string>
     <string name="help_remote_control_buttons_are_not_working_message">Ако клавиатурата, мишката или определени бутони не функционират, следвайте инструкциите по-долу:</string>
     <string name="help_remote_control_buttons_are_not_working_check_3">• Раздвоете устройствата както на това устройство, така и на отдалеченото устройство.</string>
-    <string name="app_name">BT Дистанционно</string>
+    <string name="app_name">AirRemote</string>
     <string name="bluetooth_permission_not_granted">Разрешението не е дадено</string>
     <string name="bluetooth_disabled_message">Bluetooth на вашето устройство трябва да е активиран, за да се свържете с отдалеченото устройство.</string>
     <string name="pairing_from_a_remote_device_step_4_content">Ако сте изпълнили всички предишни стъпки, сдвояването е било успешно и сте прекъснали връзката между двете устройства, можете да изберете бутона \"%1$s\". Отдалеченото устройство трябва да се появи в списъка със сдвоени устройства. Изберете го, за да установите връзката чрез HID протокола.</string>

@@ -16,5 +16,9 @@ class GyroscopeSensorRepositoryImpl(private val sensor: GyroscopeSensor): Gyrosc
 
     override fun getDisplayRotation(): Int = sensor.getDisplayRotation()
 
+    override fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?) {
+        sensor.onSample = onSample
+    }
+
     override fun getPositions(): StateFlow<Triple<Float, Float, Float>> = sensor.gyroscopePositionsState
 }

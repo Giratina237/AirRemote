@@ -11,7 +11,7 @@
     <string name="help_remote_control_buttons_are_not_working_check_4">• Koppel ze opnieuw met behulp van deze app.</string>
     <string name="keyboard_language_info">Let op: zorg ervoor dat de gekozen toetsenbordtaal overeenkomt met die van het externe apparaat.</string>
     <string name="help_pairing_device_failed_connection_message_1">Als beide apparaten gekoppeld zijn, maar je geen verbinding kunt maken, volg dan onderstaande instructies:</string>
-    <string name="app_name">BT-afstandsbediening</string>
+    <string name="app_name">AirRemote</string>
     <string name="close">Sluiten</string>
     <string name="error">Foutmelding</string>
     <string name="retry">Opnieuw proberen</string>

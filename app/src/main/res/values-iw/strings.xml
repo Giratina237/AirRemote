@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">שלט BT</string>
+    <string name="app_name">AirRemote</string>
     <string name="close">סגור</string>
     <string name="error">שגיאה</string>
     <string name="retry">נסה שנית</string>

@@ -79,7 +79,7 @@
     <string name="mute">Stummschalten</string>
     <string name="home">Zuhause</string>
     <string name="back">Zurück</string>
-    <string name="app_name">BT-Fernbedienung</string>
+    <string name="app_name">AirRemote</string>
     <string name="standby">Bereitschaft</string>
     <string name="help_remote_control_buttons_are_not_working_title">Tasten der Fernbedienung</string>
     <string name="bluetooth_failed_try_again">Bitte versuche es noch einmal.</string>

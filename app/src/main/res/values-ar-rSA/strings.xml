@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">جهاز تحكم عن بعد</string>
+    <string name="app_name">AirRemote</string>
     <string name="open">أفتح</string>
     <string name="close">أغلق</string>
     <string name="error">خطأ</string>

@@ -8,7 +8,7 @@
         If you choose to translate it, ensure that the name is 11 characters or fewer if possible.
         If the text exceeds 11 characters, it's not a problem, but it may not display entirely in all launchers.
     -->
-    <string name="app_name">BT Remote</string>
+    <string name="app_name">AirRemote</string>
     <string name="bluetooth_permission_denied_message">您已拒绝蓝牙访问。</string>
     <string name="activation">激活</string>
     <string name="bluetooth_disabled_message">必须启用设备上的蓝牙才能连接到远程设备。</string>

@@ -15,5 +15,7 @@ class GyroscopeSensorUseCase(private val repository: GyroscopeSensorRepository) 
 
     fun getDisplayRotation(): Int = repository.getDisplayRotation()
 
+    fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?) = repository.setOnSample(onSample)
+
     fun getPositions(): StateFlow<Triple<Float, Float, Float>> = repository.getPositions()
 }

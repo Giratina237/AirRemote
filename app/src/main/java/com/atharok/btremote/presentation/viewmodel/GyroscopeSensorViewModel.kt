@@ -16,6 +16,8 @@ class GyroscopeSensorViewModel(
         useCase.stopListening()
     }
 
+    fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?) = useCase.setOnSample(onSample)
+
     fun getDisplayRotation(): Int = useCase.getDisplayRotation()
 
     val positions: StateFlow<Triple<Float, Float, Float>> get() = useCase.getPositions()

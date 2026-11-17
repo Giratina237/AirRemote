@@ -128,7 +128,7 @@
     <string name="help_paring_select_device_from_list">Mevcut cihazlar listesinden eşleştirmek istediğiniz cihazı seçin.</string>
     <string name="help_remote_control_buttons_are_not_working_check_3">• Hem bu cihazdaki hem de uzak cihazdaki cihazların eşleştirmesini kaldırın.</string>
     <string name="help_keyboard_wrong_character_sent_message">Gönderilen karakterler yanlışsa uzak aygıttaki fiziksel klavyeyi uygulama ayarlarında seçilen dille eşleşecek şekilde yapılandırmanız gerekir.</string>
-    <string name="app_name">BT Kumanda</string>
+    <string name="app_name">AirRemote</string>
     <string name="keyboard_greek">Yunanca</string>
     <string name="keyboard_turkish">Türkçe</string>
     <string name="automatic_connect">Otomatik Bağlantı</string>

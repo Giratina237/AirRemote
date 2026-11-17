@@ -44,7 +44,7 @@
     <string name="permission">Pahintulot</string>
     <string name="bluetooth_permission_not_granted">Hindi binigay ang pahintulot</string>
     <string name="bluetooth_permission_message">Kailangan mong pahintulutan ang access sa Bluetooth.</string>
-    <string name="app_name">BT Remote</string>
+    <string name="app_name">AirRemote</string>
     <string name="bluetooth_failed_to_register_app_message">Nabigong i-rehistro ang application. Mangyaring siguraduhin na walang ibang Bluetooth na serbisyo ay tumatakbo sa background. Kung nagpapatuloy ang error, posible na ang proseso ng Bluetooth ay nagambala nang hindi inaasahan. Para ayusin ang isyu na ito, paki-disable ang Bluetooth sa iyong device, at muling i-enable.</string>
     <string name="help_select_device_from_list">Piliin ang device na gusto mong kumonekta sa listahan ng mga nakapares na device.</string>
     <string name="bluetooth_enabled_button">I-enable ang Bluetooth</string>

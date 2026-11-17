@@ -8,7 +8,7 @@
         If you choose to translate it, ensure that the name is 11 characters or fewer if possible.
         If the text exceeds 11 characters, it's not a problem, but it may not display entirely in all launchers.
     -->
-    <string name="app_name">BT Remote</string>
+    <string name="app_name">AirRemote</string>
     <string name="open">Ouvrir</string>
     <string name="close">Fermer</string>
     <string name="error">Erreur</string>

@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.atharok.btremote"
+        applicationId = "dev.gira.airremote"
         minSdk = 28
         targetSdk = 37
         versionCode = 27

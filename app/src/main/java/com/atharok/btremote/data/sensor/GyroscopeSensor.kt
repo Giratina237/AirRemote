@@ -22,9 +22,16 @@ class GyroscopeSensor(
     private val _gyroscopePositionsState: MutableStateFlow<Triple<Float, Float, Float>> = MutableStateFlow(Triple(0f, 0f, 0f))
     val gyroscopePositionsState: StateFlow<Triple<Float, Float, Float>> = _gyroscopePositionsState.asStateFlow()
 
+    /**
+     * Called for every gyroscope sample (x, y, z in rad/s, timestamp in ns), on the main thread.
+     * The air mouse uses this instead of the StateFlow: a StateFlow collected by Compose coalesces
+     * samples, which drops movement and makes the pointer stutter.
+     */
+    var onSample: ((Float, Float, Float, Long) -> Unit)? = null
+
     fun startListening() {
         gyroscope?.also {
-            sensorManager.registerListener(this, it, 10000)
+            sensorManager.registerListener(this, it, SAMPLING_PERIOD_US)
         }
     }
 
@@ -36,9 +43,14 @@ class GyroscopeSensor(
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_GYROSCOPE) {
+            onSample?.invoke(event.values[0], event.values[1], event.values[2], event.timestamp)
             _gyroscopePositionsState.value = Triple(event.values[0], event.values[1], event.values[2])
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    companion object {
+        const val SAMPLING_PERIOD_US = 5000   // 200 Hz; the report sender batches sub-pixel motion
+    }
 }

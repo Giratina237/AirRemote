@@ -42,6 +42,10 @@ class RemoteViewModel(
         mouseReportSender.send(input, x, y, wheel)
     }
 
+    // Air mouse (gyroscope): click-stabilised motion, paused while a finger is on the touchpad
+    val sendMouseMotion: (Float, Float) -> Unit = { x, y -> mouseReportSender.sendMotion(x, y) }
+    val setMouseMotionPaused: (Boolean) -> Unit = { mouseReportSender.motionPaused = it }
+
     // Keyboard
     val sendKeyboardReport: (ByteArray) -> Unit = { bytes -> sendReport(KEYBOARD_REPORT_ID, bytes) }
 

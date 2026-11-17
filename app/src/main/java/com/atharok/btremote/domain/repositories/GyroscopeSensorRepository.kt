@@ -10,5 +10,7 @@ interface GyroscopeSensorRepository {
 
     fun getDisplayRotation(): Int
 
+    fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?)
+
     fun getPositions(): StateFlow<Triple<Float, Float, Float>>
 }
