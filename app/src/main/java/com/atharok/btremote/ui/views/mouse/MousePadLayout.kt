@@ -36,6 +36,9 @@ fun MousePadLayout(
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
 
+    // never leave the air mouse paused when the pad goes away (mode switch, app in background)
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { setMouseMotionPaused(false) } }
+
     if(useGyroscope) {
         MouseGyroscope(
             mouseSpeed = mouseSpeed,

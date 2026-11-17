@@ -51,6 +51,7 @@ fun MousePad(
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         currentOnTouchChange.value(true)   // a finger on the pad pauses the air mouse
+                        try {
                         tapStartTimestamp.value = down.uptimeMillis
                         tapFingerCount.value = 1
                         tapAccumulatedDrift.value = 0f
@@ -84,10 +85,10 @@ fun MousePad(
                             )
 
                             inputChanges.forEach { it.consume() }
-                            if (inputChanges.none { it.pressed }) {
-                                currentOnTouchChange.value(false)
-                                break
-                            }
+                            if (inputChanges.none { it.pressed }) break
+                        }
+                        } finally {
+                            currentOnTouchChange.value(false)   // also when the gesture is cancelled
                         }
                     }
                 }
