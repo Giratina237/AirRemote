@@ -57,7 +57,8 @@ class AirPointer(
     private var scrollPitch0 = Float.NaN
     private var scrollYaw0 = 0f
     private var scrollAxis = 0          // pen scroll locked to: 0 none yet, 1 vertical, 2 horizontal
-    private var dpadPhase = 0f          // D-pad repeat: fires a press at 1
+    private var dpadHeld = false        // D-pad: a press was sent for the current tilt
+    private var dpadNextMs = 0L         // next repeat
     private var scrollAccumulator = 0f
 
     private val penMode get() = pen != null && AirMouseTuning.pen
@@ -83,6 +84,7 @@ class AirPointer(
         scrollMode = on
         scrollPitch0 = Float.NaN
         scrollAxis = 0
+        dpadHeld = false
         scrollAccumulator = 0f
         freezeUntilMs = now() + AirMouseTuning.clickFreezeMs
         latchX = if (penMode) fx else modelX; latchY = if (penMode) fy else modelY
@@ -186,23 +188,27 @@ class AirPointer(
         if (penMode) {
             val vAngle = pitch - scrollPitch0                   // + = tilted up = scroll up
             val hAngle = wrap(yaw - scrollYaw0)                 // + = turned right = scroll right
-            val vEx = (abs(vAngle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
-            val hEx = (abs(hAngle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
+            val dead = if (AirMouseTuning.scrollDpad) AirMouseTuning.dpadDeadZoneRad else AirMouseTuning.scrollDeadZoneRad
+            val vEx = (abs(vAngle) - dead).coerceAtLeast(0f)
+            val hEx = (abs(hAngle) - dead).coerceAtLeast(0f)
             // one direction at a time: whichever leaves the dead zone first, until back at neutral
-            if (vEx == 0f && hEx == 0f) { scrollAxis = 0; return }
-            if (scrollAxis == 0) {
-                scrollAxis = if (vEx >= hEx) 1 else 2
-                dpadPhase = 1f                                  // D-pad: first press right away
-            }
+            if (vEx == 0f && hEx == 0f) { scrollAxis = 0; dpadHeld = false; return }
+            if (scrollAxis == 0) scrollAxis = if (vEx >= hEx) 1 else 2
             if (AirMouseTuning.scrollDpad) {
                 val ex = if (scrollAxis == 1) vEx else hEx
-                if (ex == 0f) return                            // locked axis back in the dead zone: wait
-                val f = (ex / AirMouseTuning.dpadFullRad).coerceIn(0f, 1f)
-                dpadPhase += (AirMouseTuning.dpadMinRate + (AirMouseTuning.dpadMaxRate - AirMouseTuning.dpadMinRate) * f) * dt
-                if (dpadPhase >= 1f) {
-                    dpadPhase -= 1f
-                    dpadPhase = dpadPhase.coerceAtMost(0.99f)
-                    sendDpad(if (scrollAxis == 1) (if (vAngle > 0f) 0 else 1) else (if (hAngle > 0f) 3 else 2))
+                if (ex == 0f) { dpadHeld = false; return }      // locked axis back in the dead zone
+                val dir = if (scrollAxis == 1) (if (vAngle > 0f) 0 else 1) else (if (hAngle > 0f) 3 else 2)
+                val t = now()
+                // like holding a key: one press, a pause, then repeats getting faster with the angle
+                if (!dpadHeld) {
+                    dpadHeld = true
+                    dpadNextMs = t + AirMouseTuning.dpadRepeatDelayMs.toLong()
+                    sendDpad(dir)
+                } else if (t >= dpadNextMs) {
+                    val f = (ex / AirMouseTuning.dpadFullRad).coerceIn(0f, 1f)
+                    val rate = AirMouseTuning.dpadMinRate + (AirMouseTuning.dpadMaxRate - AirMouseTuning.dpadMinRate) * f
+                    dpadNextMs = t + (1000f / rate).toLong()
+                    sendDpad(dir)
                 }
                 return
             }

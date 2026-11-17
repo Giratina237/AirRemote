@@ -255,14 +255,17 @@ class AirPointerDpadTest {
         pointer.setScroll(true)
         hold(0f, 0f, 300)
         assertTrue(keys.isEmpty())
-        hold(0f, -10f, 1000)                        // tilt down a little: DOWN, slowly
+        hold(0f, -6f, 1000)                         // small wobble: nothing
+        assertTrue(keys.isEmpty())
+        hold(0f, -12f, 1000)                        // tilt down a bit: one press, a pause, then slow repeats
         val slow = keys.size
-        assertTrue(keys.all { it.second == 1 } && slow in 2..6)
+        assertTrue("slow $slow", keys.all { it.second == 1 } && slow in 2..4)
+        assertTrue(keys.size < 2 || keys[1].first - keys[0].first >= 450)
         keys.clear()
-        hold(0f, -35f, 1000)                        // further: faster
-        assertTrue(keys.all { it.second == 1 } && keys.size >= 9)
+        hold(0f, -45f, 1000)                        // much further: faster
+        assertTrue("fast ${keys.size}", keys.all { it.second == 1 } && keys.size >= 6)
         keys.clear()
-        hold(0f, 0f, 300); hold(20f, 6f, 1000)       // back to neutral, then turn right (wrist tilt ignored)
+        hold(0f, 0f, 300); hold(20f, 8f, 1000)       // back to neutral, then turn right (wrist tilt ignored)
         assertTrue(keys.isNotEmpty() && keys.all { it.second == 3 })
     }
 }
