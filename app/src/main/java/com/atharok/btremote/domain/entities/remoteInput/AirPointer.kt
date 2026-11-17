@@ -195,6 +195,13 @@ class AirPointer(
             if (vEx == 0f && hEx == 0f) { scrollAxis = 0; dpadHeld = false; return }
             if (scrollAxis == 0) scrollAxis = if (vEx >= hEx) 1 else 2
             if (AirMouseTuning.scrollDpad) {
+                // D-pad: follow whichever direction is clearly bigger (switch without going back to neutral)
+                val other = if (scrollAxis == 1) hEx else vEx
+                val mine = if (scrollAxis == 1) vEx else hEx
+                if (other > mine * DPAD_SWITCH_RATIO + DPAD_SWITCH_MARGIN_RAD) {
+                    scrollAxis = 3 - scrollAxis
+                    dpadHeld = false                            // new direction presses at once
+                }
                 val ex = if (scrollAxis == 1) vEx else hEx
                 if (ex == 0f) { dpadHeld = false; return }      // locked axis back in the dead zone
                 val dir = if (scrollAxis == 1) (if (vAngle > 0f) 0 else 1) else (if (hAngle > 0f) 3 else 2)
@@ -266,6 +273,8 @@ class AirPointer(
     companion object {
         const val SPEED_WINDOW_MS = 80L
         const val MAX_RAW = 120f
+        const val DPAD_SWITCH_RATIO = 1.3f
+        const val DPAD_SWITCH_MARGIN_RAD = 0.03f
         const val EDGE_PUSH = 6f
         val POINTING_POSTURE_RAD = (30 * PI / 180).toFloat()
     }

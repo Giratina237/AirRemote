@@ -272,4 +272,20 @@ class AirPointerDpadTest {
         hold(0f, 0f, 300); hold(20f, 8f, 1000)       // back to neutral, then turn right (wrist tilt ignored)
         assertTrue(keys.isNotEmpty() && keys.all { it.second == 3 })
     }
+
+    @Test
+    fun switchesDirectionWithoutGoingBackToNeutral() {
+        AirMouseTuning.scrollDpad = true
+        hold(0f, 0f, 1500)
+        pointer.setScroll(true)
+        hold(0f, 0f, 300)
+        hold(0f, -15f, 800)                         // DOWN
+        assertTrue(keys.isNotEmpty() && keys.all { it.second == 1 })
+        keys.clear()
+        for (k in 1..20) hold(k * 1f, -15f + k * 0.6f, 10)   // sweep across to the right
+        hold(20f, -3f, 600)
+        assertTrue("got $keys", keys.isNotEmpty() && keys.last().second == 3)
+        val firstRight = keys.first { it.second == 3 }.first
+        assertTrue(keys.filter { it.first > firstRight }.all { it.second == 3 })
+    }
 }
