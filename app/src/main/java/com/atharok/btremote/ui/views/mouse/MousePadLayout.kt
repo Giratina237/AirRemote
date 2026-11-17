@@ -51,7 +51,8 @@ fun MousePadLayout(
             sendMouseMotion = sendMouseMotion,
             sendMouseTilt = sendMouseTilt,
             sendMouseOrientation = sendMouseOrientation,
-            recenter = { recenterAirPointer(false) }
+            recenter = { recenterAirPointer(false) },
+            onPaused = { setMouseScrollMode(false); sendMouseInput(MouseAction.NONE, 0f, 0f, 0f) }
         )
         AirMouseLayout(
             sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },

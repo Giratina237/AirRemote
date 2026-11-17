@@ -53,6 +53,7 @@ class AirPointer(
     // scroll
     private var scrollMode = false
     private var scrollPitch0 = Float.NaN
+    private var scrollYaw0 = 0f
     private var scrollAccumulator = 0f
 
     private val penMode get() = pen != null && AirMouseTuning.pen
@@ -120,7 +121,7 @@ class AirPointer(
         val ty = (screenH / 2f - (pitch - pitch0) * pxPerRad).coerceIn(0f, screenH - 1f)
 
         if (scrollMode) {
-            scroll(pitch, dt)
+            scroll(yaw, pitch, dt)
             return
         }
 
@@ -171,19 +172,32 @@ class AirPointer(
 
     private fun factorFor(rawX: Float, rawY: Float) = hostFactor(hypot(rawX, rawY) / (SPEED_WINDOW_MS / 1000f))
 
-    private fun scroll(pitch: Float, dt: Float) {
+    /** Joystick scroll: the angle when scrolling started is neutral; the further from it, the faster. */
+    private fun scroll(yaw: Float, pitch: Float, dt: Float) {
         if (now() < freezeUntilMs) return                       // pressing the button jolts the phone
-        if (scrollPitch0.isNaN()) { scrollPitch0 = pitch; return }
-        val tilt = pitch - scrollPitch0                          // + = tilted up
-        val excess = (abs(tilt) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
-        if (excess == 0f || dt <= 0f) return
-        val rate = (AirMouseTuning.scrollRate * excess * (1f + AirMouseTuning.scrollCurve * excess))
-            .coerceAtMost(AirMouseTuning.scrollMaxRate)
-        val dir = (if (tilt > 0f) 1f else -1f) * (if (AirMouseTuning.invertScroll) -1f else 1f)   // up = wheel +
-        if (penMode) { pen!!.scrollBy(dir * rate * AirMouseTuning.scrollPxPerNotch * dt); return }
-        scrollAccumulator += dir * rate * dt
+        if (scrollPitch0.isNaN()) { scrollPitch0 = pitch; scrollYaw0 = yaw; return }
+        if (dt <= 0f) return
+        val invert = if (AirMouseTuning.invertScroll) -1f else 1f
+        val v = rate(pitch - scrollPitch0) * invert             // + = tilted up = scroll up (notches/s)
+        val h = rate(wrap(yaw - scrollYaw0)) * invert           // + = turned right = scroll right
+        if (penMode) {
+            val px = AirMouseTuning.scrollPxPerNotch * dt
+            // finger-drag: scrolling up / right = dragging down / left
+            if (v != 0f || h != 0f) pen!!.scrollBy(-h * px, v * px)
+            return
+        }
+        scrollAccumulator += v * dt
         val steps = scrollAccumulator.toInt()
         if (steps != 0) { scrollAccumulator -= steps; sendWheel(steps) }
+    }
+
+    /** Signed notches/s for an angle from neutral: dead zone, then growing gently, capped. */
+    private fun rate(angle: Float): Float {
+        val excess = (abs(angle) - AirMouseTuning.scrollDeadZoneRad).coerceAtLeast(0f)
+        if (excess == 0f) return 0f
+        val r = (AirMouseTuning.scrollRate * excess * (1f + AirMouseTuning.scrollCurve * excess))
+            .coerceAtMost(AirMouseTuning.scrollMaxRate)
+        return if (angle > 0f) r else -r
     }
 
     private fun hostFactor(rawSpeed: Float): Float {

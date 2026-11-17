@@ -189,4 +189,16 @@ class AirPointerPenTest {
         assertEquals(960f, pens.last().first, 3f)  // cursor back where it was
         assertEquals(540f, pens.last().second, 3f)
     }
+
+    @Test
+    fun turningRightScrollsSideways() {
+        hold(0f, 0f, 1500)
+        pointer.setScroll(true)
+        hold(0f, 0f, 300)
+        hold(15f, 0f, 1000)                        // turned right: drag left (content scrolls right)
+        val down = pens.filter { it.third }
+        assertTrue(down.size > 30)
+        assertTrue(down.last().first < down.first().first)
+        assertEquals(down.first().second, down.last().second, 1f)   // no vertical drift
+    }
 }

@@ -33,7 +33,8 @@ class PenCursor(
     // drag scrolling
     private enum class Stroke { NONE, DRAG, SETTLE }
     private var stroke = Stroke.NONE
-    private var strokeY = 0f            // pen y during the stroke (x stays at the cursor)
+    private var strokeX = 0f            // pen position during the stroke
+    private var strokeY = 0f
     private var settleUntilMs = 0L
     private var lastScrollMs = 0L
     private var lastSentX = Float.NaN
@@ -65,29 +66,36 @@ class PenCursor(
         emit(force = true)
     }
 
-    /** Continuous scroll: [dy] pixels of finger-drag (+ = content moves down, i.e. scrolling up). */
-    fun scrollBy(dy: Float) {
-        if (tip || dy == 0f) return
+    /**
+     * Continuous scroll by dragging with the pen: [dx], [dy] pixels of finger-drag
+     * (+dy = content moves down, i.e. scrolling up; +dx = content moves right, i.e. scrolling left).
+     */
+    fun scrollBy(dx: Float, dy: Float) {
+        if (tip || (dx == 0f && dy == 0f)) return
         val t = now()
         lastScrollMs = t
         when (stroke) {
             Stroke.NONE -> {
                 // start a stroke where there's room to drag in this direction
-                strokeY = if (dy > 0f) screenH * 0.25f else screenH * 0.75f
+                strokeX = when { dx > 0f -> screenW * 0.25f; dx < 0f -> screenW * 0.75f; else -> x.coerceIn(screenW * 0.1f, screenW * 0.9f) }
+                strokeY = when { dy > 0f -> screenH * 0.25f; dy < 0f -> screenH * 0.75f; else -> y.coerceIn(screenH * 0.1f, screenH * 0.9f) }
                 stroke = Stroke.DRAG
-                sendRaw(x, strokeY, false)      // hover to the start first
-                sendRaw(x, strokeY, true)
+                sendRaw(strokeX, strokeY, false)      // hover to the start first
+                sendRaw(strokeX, strokeY, true)
             }
             Stroke.DRAG -> {
-                strokeY += dy
-                sendRaw(x, strokeY, true)
-                if (strokeY < screenH * 0.08f || strokeY > screenH * 0.92f) {
+                strokeX += dx; strokeY += dy
+                sendRaw(strokeX, strokeY, true)
+                if (strokeX < screenW * 0.05f || strokeX > screenW * 0.95f ||
+                    strokeY < screenH * 0.08f || strokeY > screenH * 0.92f) {
                     stroke = Stroke.SETTLE; settleUntilMs = t + SETTLE_MS
                 }
             }
             Stroke.SETTLE -> tick()
         }
     }
+
+    fun scrollBy(dy: Float) = scrollBy(0f, dy)
 
     /** Call regularly: lifts the pen once scrolling has stopped (after holding still, so there's no fling). */
     fun tick() {
@@ -100,7 +108,7 @@ class PenCursor(
     }
 
     private fun finishStrokeNow() {
-        sendRaw(x, strokeY, false)      // lift where it is
+        sendRaw(strokeX, strokeY, false)      // lift where it is
         stroke = Stroke.NONE
         emit(force = true)              // and hover back to the cursor
     }

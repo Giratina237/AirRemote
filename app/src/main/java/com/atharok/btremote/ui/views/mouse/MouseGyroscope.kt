@@ -6,6 +6,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
 import com.atharok.btremote.domain.entities.remoteInput.AirMouseFilter
 import com.atharok.btremote.presentation.viewmodel.GyroscopeSensorViewModel
@@ -22,6 +25,7 @@ fun MouseGyroscope(
     sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
     sendMouseOrientation: ((Float, Float, Long, Float) -> Unit)? = null,
     recenter: () -> Unit = {},
+    onPaused: () -> Unit = {},
     gyroscopeSensorViewModel: GyroscopeSensorViewModel = koinViewModel()
 ) {
     val filter = remember { AirMouseFilter() }
@@ -31,6 +35,8 @@ fun MouseGyroscope(
     val currentTilt = rememberUpdatedState(sendMouseTilt)
     val currentOrientation = rememberUpdatedState(sendMouseOrientation)
     val lastNs = remember { longArrayOf(0L) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnPaused = rememberUpdatedState(onPaused)
 
     DisposableEffect(Unit) {
         filter.reset()
@@ -48,10 +54,33 @@ fun MouseGyroscope(
         gyroscopeSensorViewModel.setOnOrientation { yaw, pitch, timestampNs ->
             if (AirMouseTuning.absolute) currentOrientation.value?.invoke(yaw, pitch, timestampNs, currentSpeed.value)
         }
-        recenter()
-        gyroscopeSensorViewModel.startListening()
-        onDispose {
+        // only while AirRemote is the app on screen: stop in the background, re-centre on return
+        var listening = false
+        fun start() {
+            if (listening) return
+            listening = true
+            filter.reset(); lastNs[0] = 0L
+            recenter()
+            gyroscopeSensorViewModel.startListening()
+        }
+        fun stop() {
+            if (!listening) return
+            listening = false
             gyroscopeSensorViewModel.stopListening()
+            currentOnPaused.value()
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> start()
+                Lifecycle.Event.ON_PAUSE -> stop()
+                else -> {}
+            }
+        }
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) start()
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            stop()
             gyroscopeSensorViewModel.setOnSample(null)
             gyroscopeSensorViewModel.setOnOrientation(null)
         }
