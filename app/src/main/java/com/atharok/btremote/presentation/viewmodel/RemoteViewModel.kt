@@ -9,6 +9,9 @@ import com.atharok.btremote.common.utils.PEN_REPORT_ID
 import com.atharok.btremote.common.utils.REMOTE_REPORT_ID
 import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
 import com.atharok.btremote.domain.entities.remoteInput.AirPointer
+import kotlinx.coroutines.delay
+import com.atharok.btremote.common.utils.REMOTE_INPUT_NONE
+import com.atharok.btremote.domain.entities.remoteInput.PenCursor
 import com.atharok.btremote.domain.entities.remoteInput.MouseAction
 import com.atharok.btremote.domain.entities.remoteInput.MouseReportSender
 import com.atharok.btremote.domain.entities.remoteInput.keyboard.virtualKeyboard.VirtualKeyboardLayout
@@ -41,7 +44,30 @@ class RemoteViewModel(
     val sendRemoteReport: (ByteArray) -> Unit = { bytes -> sendReport(REMOTE_REPORT_ID, bytes) }
 
     // Mouse
-    private val mouseReportSender = MouseReportSender { sendReport(MOUSE_REPORT_ID, it) }
+    // The TV sees a pen tablet, not a mouse (a mouse on the same device would turn the pen into an unused
+    // touchpad): mouse reports from the touchpad / buttons are translated into pen-cursor actions.
+    private val penCursor = PenCursor(sendPen = { x, y, tip, inRange -> sendPenReport(x, y, tip, inRange) })
+    private var mouseButtons = 0
+    private val mouseReportSender = MouseReportSender { mouseToPen(it) }
+
+    private fun mouseToPen(report: ByteArray): Boolean {
+        val buttons = report[0].toInt()
+        val changed = buttons xor mouseButtons
+        mouseButtons = buttons
+        if (report[1].toInt() != 0 || report[2].toInt() != 0) penCursor.moveBy(report[1].toFloat(), report[2].toFloat())
+        if (changed and 0x02 != 0) {   // right button = Back
+            sendReport(REMOTE_REPORT_ID, if (buttons and 0x02 != 0) byteArrayOf(0x24, 0x02) else REMOTE_INPUT_NONE)
+        }
+        if (changed and 0x01 != 0) penCursor.setTip(buttons and 0x01 != 0)
+        if (report[3].toInt() != 0) penCursor.scrollBy(report[3] * AirMouseTuning.scrollPxPerNotch / 4f)
+        return true
+    }
+
+    init {
+        viewModelScope.launch {
+            while (true) { delay(16); penCursor.tick() }
+        }
+    }
     val sendMouseReport: (MouseAction, Float, Float, Float) -> Unit = { input, x, y, wheel ->
         mouseReportSender.send(input, x, y, wheel)
     }
@@ -52,15 +78,12 @@ class RemoteViewModel(
     private val airPointer = AirPointer(
         sendRaw = { x, y -> mouseReportSender.sendPointerRaw(x, y) },
         sendWheel = { mouseReportSender.sendWheel(it) },
-        sendPen = { x, y, tip, inRange -> sendPenReport(x, y, tip, inRange) }
-    ).also { p ->
-        mouseReportSender.onButtonChange = { p.onButtonChange() }
-        mouseReportSender.penTip = { down -> p.setTip(down) }
-    }
+        pen = penCursor
+    ).also { p -> mouseReportSender.onButtonChange = { p.onButtonChange() } }
 
     private fun sendPenReport(x: Float, y: Float, tip: Boolean, inRange: Boolean) {
-        val px = (x / (airPointer.screenW - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
-        val py = (y / (airPointer.screenH - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
+        val px = (x / (penCursor.screenW - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
+        val py = (y / (penCursor.screenH - 1f) * PEN_MAX).toInt().coerceIn(0, PEN_MAX)
         val flags = (if (tip) 1 else 0) or (if (inRange) 2 else 0)
         sendReport(PEN_REPORT_ID, byteArrayOf(flags.toByte(), px.toByte(), (px shr 8).toByte(), py.toByte(), (py shr 8).toByte()))
     }

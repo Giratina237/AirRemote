@@ -20,8 +20,8 @@ class AirPointer(
     private val now: () -> Long = { System.nanoTime() / 1_000_000L },
     private val sendRaw: (Float, Float) -> Unit,
     private val sendWheel: (Int) -> Unit,
-    /** Pen-tablet report: absolute position in screen pixels, tip pressed, in range. Null = relative mouse only. */
-    private val sendPen: ((Float, Float, Boolean, Boolean) -> Unit)? = null
+    /** The pen-tablet cursor (absolute). Null = emulate with relative mouse moves. */
+    private val pen: PenCursor? = null
 ) {
     var screenW = 1920f
     var screenH = 1080f
@@ -55,38 +55,14 @@ class AirPointer(
     private var scrollPitch0 = Float.NaN
     private var scrollAccumulator = 0f
 
+    private val penMode get() = pen != null && AirMouseTuning.pen
+
     /**
      * Re-sync. [fromButton] (CENTER): wherever the phone points now becomes the middle of the TV.
      * Otherwise (opening the air mouse): the phone held level (pitch [AirMouseTuning.neutralPitchDeg]) is the
      * middle row, and the middle column is set the first time the phone is held in a pointing posture, not while
      * it's held upright to look at the screen.
      */
-    // pen tablet
-    private var tip = false
-    private var lastSampleMs = Long.MIN_VALUE / 2
-    private var penX = -1f
-    private var penY = -1f
-    private val penMode get() = sendPen != null && AirMouseTuning.pen
-
-    /** The pen is in use (absolute mode, orientation flowing): it takes over the left button. */
-    val penActive get() = penMode && AirMouseTuning.absolute && now() - lastSampleMs < 300
-
-    /** Left button as the pen tip. Returns false when the pen isn't in use (the mouse button should be used). */
-    fun setTip(down: Boolean): Boolean {
-        if (down && !penActive) return false
-        if (!down && !tip) return false
-        tip = down
-        val (x, y) = if (now() < freezeUntilMs) latchX to latchY else fx to fy
-        emitPen(x, y, force = true)
-        return true
-    }
-
-    private fun emitPen(x: Float, y: Float, force: Boolean = false) {
-        if (!force && abs(x - penX) < 0.25f && abs(y - penY) < 0.25f) return
-        penX = x; penY = y
-        sendPen?.invoke(x, y, tip, true)
-    }
-
     fun recenter(fromButton: Boolean = false) { needRecenter = true; recenterPitchToo = fromButton }
 
     /** A mouse button went down or up: hold the pointer where it was just before the press jolted the phone. */
@@ -113,7 +89,6 @@ class AirPointer(
      */
     fun onOrientation(yaw: Float, pitch: Float, timestampNs: Long, speed: Float) {
         val t = now()
-        lastSampleMs = t
         val dt = if (lastSampleNs == 0L) 0f else ((timestampNs - lastSampleNs) / 1e9f).coerceIn(0f, 0.05f)
         lastSampleNs = timestampNs
 
@@ -160,7 +135,7 @@ class AirPointer(
         while (targetHistory.size > 2 && targetHistory.first()[0] < t - 400) targetHistory.removeFirst()
 
         val (gx, gy) = if (t < freezeUntilMs) latchX to latchY else fx to fy
-        if (penMode) emitPen(gx, gy) else moveModelTo(gx, gy, t)
+        if (penMode) pen!!.moveTo(gx, gy) else moveModelTo(gx, gy, t)
     }
 
     private fun moveModelTo(gx: Float, gy: Float, t: Long) {
@@ -205,6 +180,7 @@ class AirPointer(
         val rate = (AirMouseTuning.scrollRate * excess * (1f + AirMouseTuning.scrollCurve * excess))
             .coerceAtMost(AirMouseTuning.scrollMaxRate)
         val dir = (if (tilt > 0f) 1f else -1f) * (if (AirMouseTuning.invertScroll) -1f else 1f)   // up = wheel +
+        if (penMode) { pen!!.scrollBy(dir * rate * AirMouseTuning.scrollPxPerNotch * dt); return }
         scrollAccumulator += dir * rate * dt
         val steps = scrollAccumulator.toInt()
         if (steps != 0) { scrollAccumulator -= steps; sendWheel(steps) }

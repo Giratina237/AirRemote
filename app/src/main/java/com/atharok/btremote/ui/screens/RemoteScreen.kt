@@ -137,6 +137,8 @@ fun RemoteScreen(
                 onHelpBottomSheetVisibleChanged = { isHelpBottomSheetVisible = it }
             )
         },
+        airMouseFullScreen = navigationToggle == NavigationToggle.MOUSE && remoteSettings.useGyroscope &&
+            !(remoteSettings.useAdvancedKeyboard && remoteSettings.useAdvancedKeyboardIntegrated && isKeyboardVisible),
         remoteLayout = {
             RemoteLayout(
                 useMinimalistRemote = remoteSettings.useMinimalistRemote,
@@ -255,6 +257,7 @@ fun RemoteScreen(
 private fun StatelessRemoteScreen(
     deviceName: String,
     isLandscapeMode: Boolean,
+    airMouseFullScreen: Boolean,
     topBarActions: @Composable (RowScope.() -> Unit),
     remoteLayout: @Composable () -> Unit,
     navigationLayout: @Composable () -> Unit,
@@ -268,7 +271,20 @@ private fun StatelessRemoteScreen(
         topBarActions = topBarActions
     ) { innerPadding ->
 
-        if(isLandscapeMode) {
+        if (airMouseFullScreen && !isLandscapeMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(
+                        start = dimensionResource(id = R.dimen.padding_large),
+                        end = dimensionResource(id = R.dimen.padding_large),
+                        bottom = dimensionResource(id = R.dimen.padding_large)
+                    )
+            ) {
+                navigationLayout()
+            }
+        } else if(isLandscapeMode) {
             RemoteLandscapeView(
                 remoteLayout = remoteLayout,
                 navigationLayout = navigationLayout,
@@ -471,6 +487,7 @@ private fun NavigationLayout(
                     sendMouseTilt = sendMouseTilt,
                     sendMouseOrientation = sendMouseOrientation,
                     recenterAirPointer = recenterAirPointer,
+                    sendRemoteKey = sendRemoteKeyReport,
                     modifier = Modifier
                 )
             }

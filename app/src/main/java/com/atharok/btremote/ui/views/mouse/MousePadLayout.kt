@@ -36,6 +36,7 @@ fun MousePadLayout(
     sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
     sendMouseOrientation: ((Float, Float, Long, Float) -> Unit)? = null,
     recenterAirPointer: (Boolean) -> Unit = {},
+    sendRemoteKey: (ByteArray) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -56,6 +57,7 @@ fun MousePadLayout(
             sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },
             setScrollMode = setMouseScrollMode,
             recenter = { recenterAirPointer(true) },
+            sendRemoteKey = sendRemoteKey,
             modifier = modifier
         )
         return

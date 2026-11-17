@@ -51,19 +51,8 @@ class MouseReportSender(
 
     fun sendWheel(steps: Int) = sendRaw(buttons, 0f, 0f, steps.toFloat())
 
-    /** While set and returning true, the left button is the pen tip instead (called with the new state). */
-    var penTip: ((Boolean) -> Boolean)? = null
-    private var tipDown = false
-
     fun send(action: MouseAction, x: Float, y: Float, wheel: Float) {
-        var byte = action.byte
-        val leftDown = (byte.toInt() and 1) != 0
-        val tip = penTip
-        if (tip != null && leftDown != tipDown) {
-            onButtonChange?.invoke()                 // latch the pointer before the press jolts the phone
-            if (tip(leftDown)) tipDown = leftDown     // false: pen not in use, the mouse button handles it
-        }
-        if (tipDown) byte = (byte.toInt() and 0xFE).toByte()
+        val byte = action.byte
         if (byte != buttons) {
             onButtonChange?.invoke()
             val t = now()

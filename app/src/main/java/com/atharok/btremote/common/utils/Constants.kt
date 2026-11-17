@@ -23,7 +23,7 @@ const val DEFAULT_USE_FULL_SCREEN: Boolean = false
 const val DEFAULT_MOUSE_SPEED: Float = 1f
 const val DEFAULT_MOUSE_SCROLL_SPEED: Float = 1f
 const val DEFAULT_SHOULD_INVERT_MOUSE_SCROLLING_DIRECTION: Boolean = false
-const val DEFAULT_USE_GYROSCOPE: Boolean = false
+const val DEFAULT_USE_GYROSCOPE: Boolean = true
 const val TAP_DURATION_MAX: Long = 200L
 const val TAP_DRIFT_MAX_PX: Float = 5f
 
@@ -40,7 +40,7 @@ const val DEFAULT_USE_ENTER_FOR_SELECTION: Boolean = false
 
 const val DELAY_BETWEEN_KEY_PRESSES_IN_MILLIS = 25L
 
-const val USE_MOUSE_NAVIGATION_BY_DEFAULT = false
+const val USE_MOUSE_NAVIGATION_BY_DEFAULT = true
 
 // ---- HID Descriptor ----
 
@@ -88,36 +88,6 @@ val bluetoothHidDescriptor = byteArrayOf(
     0x19.toByte(), 0x00.toByte(),                    //   Usage Minimum (0)
     0x29.toByte(), 0xFF.toByte(),                    //   Usage Maximum (255)
     0x81.toByte(), 0x00.toByte(),                    //   Input (Data,Array,Absolute)
-    0xC0.toByte(),                                   // End Collection
-
-    // Mouse
-    0x05.toByte(), 0x01.toByte(),                    // Usage Page (Generic Desktop)
-    0x09.toByte(), 0x02.toByte(),                    // Usage (Mouse)
-    0xA1.toByte(), 0x01.toByte(),                    // Collection (Application)
-    0x85.toByte(), MOUSE_REPORT_ID.toByte(),         //   Report ID (3)
-    0x09.toByte(), 0x01.toByte(),                    //   Usage (Pointer)
-    0xA1.toByte(), 0x00.toByte(),                    //   Collection (Physical)
-    0x05.toByte(), 0x09.toByte(),                    //     Usage Page (Button)
-    0x19.toByte(), 0x01.toByte(),                    //     Usage Minimum (1)
-    0x29.toByte(), 0x03.toByte(),                    //     Usage Maximum (3)
-    0x15.toByte(), 0x00.toByte(),                    //     Logical Minimum (0)
-    0x25.toByte(), 0x01.toByte(),                    //     Logical Maximum (1)
-    0x75.toByte(), 0x01.toByte(),                    //     Report Size (1)
-    0x95.toByte(), 0x03.toByte(),                    //     Report Count (3)
-    0x81.toByte(), 0x02.toByte(),                    //     Input (Data,Variable,Absolute)
-    0x75.toByte(), 0x05.toByte(),                    //     Report Size (5)
-    0x95.toByte(), 0x01.toByte(),                    //     Report Count (1)
-    0x81.toByte(), 0x01.toByte(),                    //     Input (Constant,Array,Absolute)
-    0x05.toByte(), 0x01.toByte(),                    //     Usage Page (Generic Desktop)
-    0x09.toByte(), 0x30.toByte(),                    //     Usage (X)
-    0x09.toByte(), 0x31.toByte(),                    //     Usage (Y)
-    0x09.toByte(), 0x38.toByte(),                    //     Usage (Wheel)
-    0x15.toByte(), 0x81.toByte(),                    //     Logical Minimum (-127)
-    0x25.toByte(), 0x7F.toByte(),                    //     Logical Maximum (127)
-    0x75.toByte(), 0x08.toByte(),                    //     Report Size (8)
-    0x95.toByte(), 0x03.toByte(),                    //     Report Count (3)
-    0x81.toByte(), 0x06.toByte(),                    //     Input (Data,Variable,Relative)
-    0xC0.toByte(),                                   //   End Collection
     0xC0.toByte(),                                   // End Collection
 
     // Pen tablet (absolute air pointer): the TV puts its cursor exactly at (X, Y), no acceleration, no drift.

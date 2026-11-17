@@ -130,15 +130,17 @@ class AirPointerTest {
 class AirPointerPenTest {
     private var clock = 1_000L
     private val pens = mutableListOf<Triple<Float, Float, Boolean>>()
+    private val times = mutableListOf<Long>()
     private var relative = 0
-    private val pointer = AirPointer(now = { clock }, sendRaw = { _, _ -> relative++ }, sendWheel = {},
-        sendPen = { x, y, tip, _ -> pens.add(Triple(x, y, tip)) })
+    private val cursor = PenCursor(now = { clock }) { x, y, tip, _ -> pens.add(Triple(x, y, tip)); times.add(clock) }
+    private val pointer = AirPointer(now = { clock }, sendRaw = { _, _ -> relative++ }, sendWheel = {}, pen = cursor)
     private val rad = (Math.PI / 180).toFloat()
     private val level = AirMouseTuning.neutralPitchDeg
 
     private fun hold(yawDeg: Float, pitchDeg: Float, ms: Int) = repeat(ms / 5) {
         clock += 5
         pointer.onOrientation(yawDeg * rad, (level + pitchDeg) * rad, clock * 1_000_000L, 1f)
+        cursor.tick()
     }
 
     @Test
@@ -153,21 +155,38 @@ class AirPointerPenTest {
     }
 
     @Test
-    fun leftButtonIsThePenTipAtTheSteadySpot() {
-        val sender = MouseReportSender(now = { clock }) { true }
-        sender.penTip = { pointer.setTip(it) }
-        sender.onButtonChange = { pointer.onButtonChange() }
+    fun clickPressesThePenAtTheSteadySpot() {
         hold(0f, 0f, 1500)
-        sender.send(MouseAction.MOUSE_CLICK_LEFT, 0f, 0f, 0f)
+        pointer.onButtonChange()
+        cursor.setTip(true)
         hold(1.5f, -1f, 100)                       // jolt
         assertTrue(pens.last().third)
         assertEquals(960f, pens.last().first, 3f)
-        sender.send(MouseAction.NONE, 0f, 0f, 0f)
+        assertEquals(540f, pens.last().second, 3f)
+        cursor.setTip(false)
         assertTrue(!pens.last().third)
     }
 
     @Test
-    fun penNotInUseLeavesTheMouseButton() {
-        assertTrue(!pointer.setTip(true))          // no orientation yet
+    fun scrollDragsSmoothlyAndLiftsWithoutFling() {
+        hold(0f, 0f, 1500)
+        pointer.setScroll(true)
+        hold(0f, 0f, 300)
+        assertTrue(pens.none { it.third })         // no tilt: no press (no accidental long-press)
+        hold(0f, 15f, 1500)                        // tilt up: drag down (content scrolls up), tip held
+        val down = pens.filter { it.third }
+        assertTrue(down.size > 50)
+        assertTrue("moves in small steps", down.zipWithNext().all { (a, b) -> abs(b.second - a.second) < 30f })
+        assertTrue(down.last().second > down.first().second)
+        hold(0f, 0f, 400)                          // back to neutral: holds still, then lifts
+        val lift = pens.indexOfLast { it.third }
+        assertTrue(lift < pens.size - 1)
+        // the pen is still (no reports) for a while before it lifts, so the list sees zero speed: no fling
+        assertTrue("still before lifting", times[lift + 1] - times[lift] >= PenCursor.IDLE_MS)
+        assertEquals(pens[lift].second, pens[lift + 1].second, 0.01f)
+        pointer.setScroll(false)
+        hold(0f, 0f, 300)
+        assertEquals(960f, pens.last().first, 3f)  // cursor back where it was
+        assertEquals(540f, pens.last().second, 3f)
     }
 }
