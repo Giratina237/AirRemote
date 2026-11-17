@@ -157,6 +157,8 @@ fun RemoteScreen(
                 setMouseMotionPaused = remoteViewModel.setMouseMotionPaused,
                 setMouseScrollMode = remoteViewModel.setMouseScrollMode,
                 sendMouseTilt = remoteViewModel.sendMouseTilt,
+                sendMouseOrientation = remoteViewModel.sendMouseOrientation,
+                recenterAirPointer = remoteViewModel.recenterAirPointer,
                 navigationToggle = navigationToggle,
             )
         },
@@ -441,6 +443,8 @@ private fun NavigationLayout(
     setMouseMotionPaused: (Boolean) -> Unit,
     setMouseScrollMode: (Boolean) -> Unit,
     sendMouseTilt: (Float, Float) -> Unit,
+    sendMouseOrientation: (Float, Float, Long, Float) -> Unit,
+    recenterAirPointer: () -> Unit,
     navigationToggle: NavigationToggle
 ) {
     FadeAnimatedContent(targetState = navigationToggle) {
@@ -465,6 +469,8 @@ private fun NavigationLayout(
                     setMouseMotionPaused = setMouseMotionPaused,
                     setMouseScrollMode = setMouseScrollMode,
                     sendMouseTilt = sendMouseTilt,
+                    sendMouseOrientation = sendMouseOrientation,
+                    recenterAirPointer = recenterAirPointer,
                     modifier = Modifier
                 )
             }

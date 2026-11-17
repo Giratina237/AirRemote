@@ -12,5 +12,7 @@ interface GyroscopeSensorRepository {
 
     fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?)
 
+    fun setOnOrientation(onOrientation: ((Float, Float, Long) -> Unit)?)
+
     fun getPositions(): StateFlow<Triple<Float, Float, Float>>
 }

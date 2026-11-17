@@ -18,10 +18,19 @@ object AirMouseTuning {
     @Volatile var clickFreezeMs = MouseReportSender.CLICK_FREEZE_MS
     @Volatile var rewindMs = MouseReportSender.REWIND_MS
     @Volatile var scrollDeadZoneRad = 0.07f    // ~4 deg of tilt from neutral before scrolling starts
-    @Volatile var scrollRate = 25f             // wheel notches per second per radian past the dead zone
-    @Volatile var scrollCurve = 2f             // extra speed-up further out
-    @Volatile var scrollMaxRate = 30f          // notches per second cap
+    @Volatile var scrollRate = 18f             // wheel notches per second per radian past the dead zone
+    @Volatile var scrollCurve = 1.5f           // extra speed-up further out
+    @Volatile var scrollMaxRate = 12f          // cap, below the TV's wheel acceleration (15/s) so steps stay even
     @Volatile var invertScroll = false
+    // absolute pointer
+    @Volatile var absolute = true
+    @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
+    @Volatile var pointerMinCutoffHz = 1.2f     // smoothing when still (lower = steadier)
+    @Volatile var pointerBeta = 0.004f          // how quickly smoothing lets go as it moves (per px/s)
+    // the TV's mouse acceleration (dumpsys input: PointerVelocityControlParameters)
+    @Volatile var hostLowThreshold = 500f
+    @Volatile var hostHighThreshold = 3000f
+    @Volatile var hostAcceleration = 3f
 
     private var lastModified = -1L
     private var lastCheckMs = 0L
@@ -48,6 +57,13 @@ object AirMouseTuning {
             scrollCurve = j.optDouble("scrollCurve", scrollCurve.toDouble()).toFloat()
             scrollMaxRate = j.optDouble("scrollMaxRate", scrollMaxRate.toDouble()).toFloat()
             invertScroll = j.optBoolean("invertScroll", invertScroll)
+            absolute = j.optBoolean("absolute", absolute)
+            degreesPerScreenWidth = j.optDouble("degreesPerScreenWidth", degreesPerScreenWidth.toDouble()).toFloat()
+            pointerMinCutoffHz = j.optDouble("pointerMinCutoffHz", pointerMinCutoffHz.toDouble()).toFloat()
+            pointerBeta = j.optDouble("pointerBeta", pointerBeta.toDouble()).toFloat()
+            hostLowThreshold = j.optDouble("hostLowThreshold", hostLowThreshold.toDouble()).toFloat()
+            hostHighThreshold = j.optDouble("hostHighThreshold", hostHighThreshold.toDouble()).toFloat()
+            hostAcceleration = j.optDouble("hostAcceleration", hostAcceleration.toDouble()).toFloat()
             android.util.Log.i("AirMouse", "tuning: ppr=$pixelsPerRadian accel=$acceleration dead=$deadZone cutoff=$minCutoffHz beta=$beta freeze=$clickFreezeMs rewind=$rewindMs")
         } catch (e: Exception) {
             android.util.Log.w("AirMouse", "airmouse.json: $e")

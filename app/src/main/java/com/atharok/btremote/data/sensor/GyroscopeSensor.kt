@@ -17,6 +17,11 @@ class GyroscopeSensor(
 ): SensorEventListener {
 
     private val gyroscope: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+    private val rotation: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+    private val rotationMatrix = FloatArray(9)
+
+    /** Pointing direction of the phone's top edge: (yaw rad, + = right; pitch rad, + = up; timestamp ns). */
+    var onOrientation: ((Float, Float, Long) -> Unit)? = null
     private val display: Display? = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
 
     private val _gyroscopePositionsState: MutableStateFlow<Triple<Float, Float, Float>> = MutableStateFlow(Triple(0f, 0f, 0f))
@@ -33,6 +38,9 @@ class GyroscopeSensor(
         gyroscope?.also {
             sensorManager.registerListener(this, it, SAMPLING_PERIOD_US)
         }
+        rotation?.also {
+            sensorManager.registerListener(this, it, SAMPLING_PERIOD_US)
+        }
     }
 
     fun stopListening() {
@@ -42,6 +50,16 @@ class GyroscopeSensor(
     fun getDisplayRotation(): Int = display?.rotation ?: Surface.ROTATION_0
 
     override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_GAME_ROTATION_VECTOR) {
+            val cb = onOrientation ?: return
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+            // world direction of the device +Y axis (top edge) = second column of R
+            val vx = rotationMatrix[1]; val vy = rotationMatrix[4]; val vz = rotationMatrix[7]
+            val yaw = kotlin.math.atan2(vx, vy)
+            val pitch = kotlin.math.asin(vz.coerceIn(-1f, 1f))
+            cb(yaw, pitch, event.timestamp)
+            return
+        }
         if (event?.sensor?.type == Sensor.TYPE_GYROSCOPE) {
             onSample?.invoke(event.values[0], event.values[1], event.values[2], event.timestamp)
             _gyroscopePositionsState.value = Triple(event.values[0], event.values[1], event.values[2])

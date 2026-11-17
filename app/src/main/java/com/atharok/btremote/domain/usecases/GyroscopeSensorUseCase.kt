@@ -17,5 +17,7 @@ class GyroscopeSensorUseCase(private val repository: GyroscopeSensorRepository) 
 
     fun setOnSample(onSample: ((Float, Float, Float, Long) -> Unit)?) = repository.setOnSample(onSample)
 
+    fun setOnOrientation(onOrientation: ((Float, Float, Long) -> Unit)?) = repository.setOnOrientation(onOrientation)
+
     fun getPositions(): StateFlow<Triple<Float, Float, Float>> = repository.getPositions()
 }

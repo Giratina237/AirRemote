@@ -25,12 +25,14 @@ import com.atharok.btremote.ui.components.customButtons.SurfaceButton
  * Air mouse screen (gyroscope mode): the phone is the pointer.
  *  - CLICK: press = left button down, release = up, so holding it drags.
  *  - SCROLL: while held, the pointer stays put and tilting the phone up / down scrolls.
+ *  - CENTER: the phone's current pointing direction becomes the middle of the TV (pointer re-synced).
  *  - BACK: right mouse button (Android treats it as Back).
  */
 @Composable
 fun AirMouseLayout(
     sendMouseAction: (MouseAction) -> Unit,
     setScrollMode: (Boolean) -> Unit,
+    recenter: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
@@ -55,7 +57,15 @@ fun AirMouseLayout(
                 onDown = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); setScrollMode(true) },
                 onUp = { setScrollMode(false) },
                 shape = shape,
-                modifier = Modifier.weight(0.62f).fillMaxSize()
+                modifier = Modifier.weight(0.4f).fillMaxSize()
+            )
+            AirButton(
+                label = "CENTER",
+                hint = "point at the middle, tap",
+                onDown = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); recenter() },
+                onUp = {},
+                shape = shape,
+                modifier = Modifier.weight(0.3f).fillMaxSize()
             )
             AirButton(
                 label = "BACK",
@@ -63,7 +73,7 @@ fun AirMouseLayout(
                 onDown = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); sendMouseAction(MouseAction.MOUSE_CLICK_RIGHT) },
                 onUp = { sendMouseAction(MouseAction.NONE) },
                 shape = shape,
-                modifier = Modifier.weight(0.38f).fillMaxSize()
+                modifier = Modifier.weight(0.3f).fillMaxSize()
             )
         }
     }

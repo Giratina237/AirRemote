@@ -43,8 +43,17 @@ class MouseReportSender(
 
     private class Motion(val timeMs: Long, val x: Float, val y: Float)
 
+    /** Notified when a mouse button goes down or up (the absolute air pointer holds still around clicks). */
+    var onButtonChange: (() -> Unit)? = null
+
+    /** Raw pointer movement from the absolute air pointer (it does its own click stabilisation). */
+    fun sendPointerRaw(x: Float, y: Float) = sendRaw(buttons, x, y, 0f)
+
+    fun sendWheel(steps: Int) = sendRaw(buttons, 0f, 0f, steps.toFloat())
+
     fun send(action: MouseAction, x: Float, y: Float, wheel: Float) {
         if (action.byte != buttons) {
+            onButtonChange?.invoke()
             val t = now()
             if (action != MouseAction.NONE && buttons == MouseAction.NONE.byte) rewindRecentMotion(t)
             lastButtonChangeMs = t

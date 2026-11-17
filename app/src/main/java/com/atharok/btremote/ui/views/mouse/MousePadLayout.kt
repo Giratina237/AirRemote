@@ -34,6 +34,8 @@ fun MousePadLayout(
     setMouseMotionPaused: (Boolean) -> Unit,
     setMouseScrollMode: (Boolean) -> Unit = {},
     sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
+    sendMouseOrientation: ((Float, Float, Long, Float) -> Unit)? = null,
+    recenterAirPointer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val mouseAction: Ref<MouseAction> = remember { Ref(MouseAction.NONE) }
@@ -46,11 +48,14 @@ fun MousePadLayout(
         MouseGyroscope(
             mouseSpeed = mouseSpeed,
             sendMouseMotion = sendMouseMotion,
-            sendMouseTilt = sendMouseTilt
+            sendMouseTilt = sendMouseTilt,
+            sendMouseOrientation = sendMouseOrientation,
+            recenter = recenterAirPointer
         )
         AirMouseLayout(
             sendMouseAction = { sendMouseInput(it, 0f, 0f, 0f) },
             setScrollMode = setMouseScrollMode,
+            recenter = recenterAirPointer,
             modifier = modifier
         )
         return

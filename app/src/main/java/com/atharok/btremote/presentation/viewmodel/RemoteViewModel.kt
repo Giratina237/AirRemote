@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.atharok.btremote.common.utils.KEYBOARD_REPORT_ID
 import com.atharok.btremote.common.utils.MOUSE_REPORT_ID
 import com.atharok.btremote.common.utils.REMOTE_REPORT_ID
+import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
+import com.atharok.btremote.domain.entities.remoteInput.AirPointer
 import com.atharok.btremote.domain.entities.remoteInput.MouseAction
 import com.atharok.btremote.domain.entities.remoteInput.MouseReportSender
 import com.atharok.btremote.domain.entities.remoteInput.keyboard.virtualKeyboard.VirtualKeyboardLayout
@@ -45,7 +47,15 @@ class RemoteViewModel(
     // Air mouse (gyroscope): click-stabilised motion, paused while a finger is on the touchpad
     val sendMouseMotion: (Float, Float) -> Unit = { x, y -> mouseReportSender.sendMotion(x, y) }
     val setMouseMotionPaused: (Boolean) -> Unit = { mouseReportSender.motionPaused = it }
-    val setMouseScrollMode: (Boolean) -> Unit = { mouseReportSender.scrollMode = it }
+    private val airPointer = AirPointer(
+        sendRaw = { x, y -> mouseReportSender.sendPointerRaw(x, y) },
+        sendWheel = { mouseReportSender.sendWheel(it) }
+    ).also { p -> mouseReportSender.onButtonChange = { p.onButtonChange() } }
+    val setMouseScrollMode: (Boolean) -> Unit = {
+        if (AirMouseTuning.absolute) airPointer.setScroll(it) else mouseReportSender.scrollMode = it
+    }
+    val sendMouseOrientation: (Float, Float, Long, Float) -> Unit = { yaw, pitch, t, speed -> airPointer.onOrientation(yaw, pitch, t, speed) }
+    val recenterAirPointer: () -> Unit = { airPointer.recenter() }
     val sendMouseTilt: (Float, Float) -> Unit = { rateY, dt -> mouseReportSender.sendTilt(rateY, dt) }
 
     // Keyboard

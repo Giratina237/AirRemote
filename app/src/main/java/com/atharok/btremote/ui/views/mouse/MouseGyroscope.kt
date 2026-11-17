@@ -20,6 +20,8 @@ fun MouseGyroscope(
     mouseSpeed: Float,
     sendMouseMotion: (Float, Float) -> Unit,
     sendMouseTilt: (Float, Float) -> Unit = { _, _ -> },
+    sendMouseOrientation: ((Float, Float, Long, Float) -> Unit)? = null,
+    recenter: () -> Unit = {},
     gyroscopeSensorViewModel: GyroscopeSensorViewModel = koinViewModel()
 ) {
     val filter = remember { AirMouseFilter() }
@@ -27,6 +29,7 @@ fun MouseGyroscope(
     val currentSpeed = rememberUpdatedState(mouseSpeed)
     val currentSend = rememberUpdatedState(sendMouseMotion)
     val currentTilt = rememberUpdatedState(sendMouseTilt)
+    val currentOrientation = rememberUpdatedState(sendMouseOrientation)
     val lastNs = remember { longArrayOf(0L) }
 
     DisposableEffect(Unit) {
@@ -37,14 +40,20 @@ fun MouseGyroscope(
             val (rateX, rateY) = screenRates(x, y, z, gyroscopeSensorViewModel.getDisplayRotation())
             val dt = if (lastNs[0] == 0L) 0f else ((timestampNs - lastNs[0]) / 1e9f).coerceIn(0f, 0.05f)
             lastNs[0] = timestampNs
+            if (AirMouseTuning.absolute && currentOrientation.value != null) return@setOnSample
             currentTilt.value(rateY, dt)
             val (dx, dy) = filter.step(rateX, rateY, timestampNs, currentSpeed.value)
             if (dx != 0f || dy != 0f) currentSend.value(dx, dy)
         }
+        gyroscopeSensorViewModel.setOnOrientation { yaw, pitch, timestampNs ->
+            if (AirMouseTuning.absolute) currentOrientation.value?.invoke(yaw, pitch, timestampNs, currentSpeed.value)
+        }
+        recenter()
         gyroscopeSensorViewModel.startListening()
         onDispose {
             gyroscopeSensorViewModel.stopListening()
             gyroscopeSensorViewModel.setOnSample(null)
+            gyroscopeSensorViewModel.setOnOrientation(null)
         }
     }
 }
