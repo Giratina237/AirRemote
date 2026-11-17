@@ -289,3 +289,28 @@ class AirPointerDpadTest {
         assertTrue(keys.filter { it.first > firstRight }.all { it.second == 3 })
     }
 }
+
+class PenCursorHideTest {
+    private var clock = 1_000L
+    private val inRange = mutableListOf<Boolean>()
+    private val cursor = PenCursor(now = { clock }) { _, _, _, r -> inRange.add(r) }
+
+    private fun still(ms: Int, jitter: Float = 2f) = repeat(ms / 5) { i ->
+        clock += 5
+        cursor.moveTo(500f + if (i % 2 == 0) jitter else -jitter, 400f)
+        cursor.tick()
+    }
+
+    @Test
+    fun hidesWhenStillAndComesBackOnMove() {
+        still(2000)
+        assertTrue(inRange.last())
+        still(1500)                                  // 3.5 s of tremor only: hidden
+        assertTrue(!inRange.last())
+        val n = inRange.size
+        still(1000)                                  // tremor doesn't wake it
+        assertEquals(n, inRange.size)
+        clock += 5; cursor.moveTo(530f, 400f)        // a real move does
+        assertTrue(inRange.last())
+    }
+}

@@ -43,9 +43,23 @@ class PenCursor(
 
     val scrolling get() = stroke != Stroke.NONE
 
+    // auto-hide: hand tremor keeps the pointer "moving", so the TV would never fade it on its own
+    private var hidden = false
+    private var anchorX = Float.NaN
+    private var anchorY = Float.NaN
+    private var stillSinceMs = now()
+
     fun moveTo(px: Float, py: Float) {
         x = px.coerceIn(0f, screenW - 1f)
         y = py.coerceIn(0f, screenH - 1f)
+        val moved = anchorX.isNaN() || hypot(x - anchorX, y - anchorY) > (if (hidden) WAKE_PX else STILL_PX)
+        if (moved) { anchorX = x; anchorY = y; stillSinceMs = now() }
+        if (hidden) {
+            if (!moved) return                      // stay hidden through tremor
+            hidden = false
+            if (stroke == Stroke.NONE) emit(force = true)
+            return
+        }
         if (stroke == Stroke.NONE) emit()
     }
 
@@ -62,6 +76,7 @@ class PenCursor(
 
     fun setTip(down: Boolean) {
         if (stroke != Stroke.NONE) finishStrokeNow()
+        hidden = false; stillSinceMs = now()
         tip = down
         emit(force = true)
     }
@@ -74,6 +89,7 @@ class PenCursor(
         if (tip || (dx == 0f && dy == 0f)) return
         val t = now()
         lastScrollMs = t
+        hidden = false; stillSinceMs = t
         when (stroke) {
             Stroke.NONE -> {
                 // start a stroke where there's room to drag in this direction
@@ -103,7 +119,13 @@ class PenCursor(
         when (stroke) {
             Stroke.DRAG -> if (t - lastScrollMs > IDLE_MS) { stroke = Stroke.SETTLE; settleUntilMs = t + SETTLE_MS }
             Stroke.SETTLE -> if (t >= settleUntilMs) finishStrokeNow()
-            Stroke.NONE -> {}
+            Stroke.NONE -> {
+                val hideMs = AirMouseTuning.cursorHideMs
+                if (!hidden && !tip && hideMs > 0f && t - stillSinceMs > hideMs) {
+                    hidden = true
+                    sendPen(x, y, false, false)     // pen out of range: the TV fades its cursor
+                }
+            }
         }
     }
 
@@ -137,6 +159,8 @@ class PenCursor(
     companion object {
         const val SPEED_WINDOW_MS = 80L
         const val IDLE_MS = 120L        // no scroll input this long = scrolling stopped
+        const val STILL_PX = 8f         // closer than this counts as still (tremor)
+        const val WAKE_PX = 12f         // move this far to bring a hidden cursor back
         const val SETTLE_MS = 60L       // hold still before lifting (the list's fling tracker sees zero speed)
     }
 }

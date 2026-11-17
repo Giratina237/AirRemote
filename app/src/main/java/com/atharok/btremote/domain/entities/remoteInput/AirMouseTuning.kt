@@ -36,6 +36,7 @@ object AirMouseTuning {
     @Volatile var dpadMinRate = 1f              // presses/s just past the dead zone, at first
     @Volatile var dpadMaxRate = 10f             // presses/s at full speed
     @Volatile var dpadFullRad = 0.6f            // angle past the dead zone for full speed (speed grows with the square)
+    @Volatile var cursorHideMs = 3000f          // hide the TV cursor after this long still (0 = never)
     @Volatile var pen = true                     // absolute via the pen-tablet device (false: emulate with relative mouse moves)
     @Volatile var neutralPitchDeg = 30f         // phone angle that points at the middle row (0 = level, + = tilted up)
     @Volatile var degreesPerScreenWidth = 40f   // how far to turn the phone to cross the TV
@@ -73,6 +74,7 @@ object AirMouseTuning {
             invertScroll = j.optBoolean("invertScroll", invertScroll)
             absolute = j.optBoolean("absolute", absolute)
             pen = j.optBoolean("pen", pen)
+            cursorHideMs = j.optDouble("cursorHideMs", cursorHideMs.toDouble()).toFloat()
             if (j.has("scrollDpad")) scrollDpad = j.optBoolean("scrollDpad", scrollDpad)
             dpadDeadZoneRad = j.optDouble("dpadDeadZoneRad", dpadDeadZoneRad.toDouble()).toFloat()
             dpadRepeatDelayMs = j.optDouble("dpadRepeatDelayMs", dpadRepeatDelayMs.toDouble()).toFloat()
