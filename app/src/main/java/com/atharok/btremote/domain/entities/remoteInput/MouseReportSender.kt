@@ -41,16 +41,16 @@ class MouseReportSender(
     fun sendMotion(x: Float, y: Float) {
         if (motionPaused) return
         val t = now()
-        if (t - lastButtonChangeMs < CLICK_FREEZE_MS) return
+        if (t - lastButtonChangeMs < AirMouseTuning.clickFreezeMs) return
         recentMotion.addLast(Motion(t, x, y))
-        while (recentMotion.isNotEmpty() && recentMotion.first().timeMs < t - REWIND_MS) recentMotion.removeFirst()
+        while (recentMotion.isNotEmpty() && recentMotion.first().timeMs < t - AirMouseTuning.rewindMs) recentMotion.removeFirst()
         sendRaw(buttons, x, y, 0f)
     }
 
     private fun rewindRecentMotion(t: Long) {
         var x = 0f
         var y = 0f
-        for (m in recentMotion) if (m.timeMs >= t - REWIND_MS) { x += m.x; y += m.y }
+        for (m in recentMotion) if (m.timeMs >= t - AirMouseTuning.rewindMs) { x += m.x; y += m.y }
         // Folded into the same report as the button press: the host moves the pointer back, then clicks.
         pendingX -= x
         pendingY -= y

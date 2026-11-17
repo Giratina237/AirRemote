@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
+import com.atharok.btremote.domain.entities.remoteInput.AirMouseTuning
 import com.atharok.btremote.domain.entities.remoteInput.AirMouseFilter
 import com.atharok.btremote.presentation.viewmodel.GyroscopeSensorViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -20,12 +22,14 @@ fun MouseGyroscope(
     gyroscopeSensorViewModel: GyroscopeSensorViewModel = koinViewModel()
 ) {
     val filter = remember { AirMouseFilter() }
+    val tuningDir = LocalContext.current.getExternalFilesDir(null)
     val currentSpeed = rememberUpdatedState(mouseSpeed)
     val currentSend = rememberUpdatedState(sendMouseMotion)
 
     DisposableEffect(Unit) {
         filter.reset()
         gyroscopeSensorViewModel.setOnSample { x, y, z, timestampNs ->
+            AirMouseTuning.reloadIfChanged(tuningDir, timestampNs / 1_000_000L)
             val (rateX, rateY) = screenRates(x, y, z, gyroscopeSensorViewModel.getDisplayRotation())
             val (dx, dy) = filter.step(rateX, rateY, timestampNs, currentSpeed.value)
             if (dx != 0f || dy != 0f) currentSend.value(dx, dy)

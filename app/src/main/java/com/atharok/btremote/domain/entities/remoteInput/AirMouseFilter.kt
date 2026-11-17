@@ -38,16 +38,17 @@ class AirMouseFilter {
         if (dt <= 0f) return 0f to 0f
 
         val rawMagnitude = hypot(rateX, rateY)
-        val cutoffHz = MIN_CUTOFF_HZ + BETA * rawMagnitude
+        val cutoffHz = AirMouseTuning.minCutoffHz + AirMouseTuning.beta * rawMagnitude
         val alpha = alpha(cutoffHz, dt)
         smoothX += alpha * (rateX - smoothX)
         smoothY += alpha * (rateY - smoothY)
 
         val magnitude = hypot(smoothX, smoothY)
-        val keep = ((magnitude - DEAD_ZONE) / (2f * DEAD_ZONE)).coerceIn(0f, 1f)
+        val dead = AirMouseTuning.deadZone
+        val keep = if (dead <= 0f) 1f else ((magnitude - dead) / (2f * dead)).coerceIn(0f, 1f)
         if (keep == 0f) return 0f to 0f
 
-        val gain = PIXELS_PER_RADIAN * speed * (1f + ACCELERATION * magnitude) * keep
+        val gain = AirMouseTuning.pixelsPerRadian * speed * (1f + AirMouseTuning.acceleration * magnitude) * keep
         return smoothX * gain * dt to smoothY * gain * dt
     }
 
