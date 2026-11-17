@@ -140,18 +140,18 @@ fun AirMouseLayout(
     )
 
     Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
-        Row(Modifier.fillMaxWidth().weight(0.17f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        Row(Modifier.fillMaxWidth().weight(0.14f), horizontalArrangement = Arrangement.spacedBy(gap)) {
             Key(RemoteButtonProperties.RewindButton)
             Key(RemoteButtonProperties.PlayPauseButton, 1.4f)
             Key(RemoteButtonProperties.ForwardButton)
         }
-        Row(Modifier.fillMaxWidth().weight(0.17f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        Row(Modifier.fillMaxWidth().weight(0.14f), horizontalArrangement = Arrangement.spacedBy(gap)) {
             Key(RemoteButtonProperties.VolumeDownButton)
             Key(RemoteButtonProperties.VolumeUpButton)
             Key(RemoteButtonProperties.VolumeMuteButton)
         }
         RadialPad(buttons = buttons, modifier = Modifier.fillMaxWidth().weight(0.46f))
-        Row(Modifier.fillMaxWidth().weight(0.20f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        Row(Modifier.fillMaxWidth().weight(0.26f), horizontalArrangement = Arrangement.spacedBy(gap)) {
             Key(RemoteButtonProperties.HomeButton)
             Key(RemoteButtonProperties.MenuButton)
         }
