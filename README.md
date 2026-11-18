@@ -1,3 +1,7 @@
+> **AirRemote** is a personal fork of [BT Remote](https://gitlab.com/Atharok/BtRemote) by Atharok (GPL-3.0), adding a gyro air mouse:
+> drift-free absolute pointing (HID pen tablet), a one-handed radial layout, drag/D-pad scroll modes and cursor auto-hide.
+> All credit for the original app goes to its author; the store and download links below are for the original app, not this fork.
+
 <div align="center"><img src="assets/icon_round.png" width="192" /></div>
 
 ## <div align="center">BT Remote</div>
